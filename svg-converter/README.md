@@ -35,6 +35,12 @@ extracts the svg:path:-d information and converts *the points* to the wall-plott
 ```
 Every section "M" or "m" of a svg/xml-path section will be converted into a `points-array` with `X` and `Y` coords.
 
+## Usage
+```
+> node svg2json.js example.svg
+```
+The json-output will be stored as `example.json`.
+
 
 # how to create a "working" SVG
 
