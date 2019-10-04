@@ -4,7 +4,7 @@
 
 
 # about this tool
-extracts the svg:path:-d information and converts *the points* to the wall-plotter json format:
+extracts the svg:path:d information and converts *the points* to the wall-plotter json format:
 ```
 <svg xmlns="http://www.w3.org/2000/svg"
      width="8.88889in" height="5.55556in"
@@ -44,7 +44,7 @@ The json-output will be stored as `example.json`.
 
 # how to create a "working" SVG
 
-I#m using `gimp` to create the svg templates. Gimp creates plain path-instructions. Not all SVG-possibilies are supported. Just plain extraction of the `svg:path:-d` information is done.
+I'm using `gimp` to create the svg templates. Gimp creates plain path-instructions. Not all SVG-possibilies are supported. Just plain extraction of the `svg:path:-d` information is done.
 The parser crawls and splits "M"/"m" parts in the path and **needs** X and Y information.
 
 ## In gimp you can convert drawings to path instructions:

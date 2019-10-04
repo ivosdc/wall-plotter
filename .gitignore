@@ -8,4 +8,5 @@ ignore/
 *.pem
 .git-author
 svg-converter/node_modules
-
+svg-converter/wall-plotter.json
+svg-converter/wall-plotter.svg
