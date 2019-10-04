@@ -1,0 +1,11 @@
+ignore/
+.idea/
+*~
+.DS_Store
+.idea
+*.iml
+*sublime*
+*.pem
+.git-author
+svg-converter/node_modules
+
