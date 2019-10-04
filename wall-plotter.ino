@@ -26,7 +26,6 @@ long currentLeftSteps = 1000*stepsPerMM;
 long currentRightSteps = 1000*stepsPerMM;
 float centerX = 500; //starting x pos
 float centerY = 866; //starting x pos
-float printSize = 1.0;
 static float min_x = 100000000.0;
 static float min_y = 100000000.0;
 static float lastX,lastY;
@@ -53,18 +52,6 @@ void setup()
   Serial.println(disparity);
 }
 
-
-/*
-void setOrigo() {
-    float currentLeft  = currentLeftSteps / stepsPerMM;
-    float currentRight = currentRightSteps / stepsPerMM;
-    float tmp1 = (currentRight*currentRight-disparity*disparity-currentLeft*currentLeft);
-    float tmp2 = (-2*currentLeft*disparity);
-    float a = acos(tmp1/tmp2);    
-    centerX = currentLeft*cos(a);
-    centerY = currentLeft*sin(a);
-}
-*/
 
 bool getNextXY(int line, int point, float *x, float *y)
 {
@@ -102,7 +89,6 @@ bool getSvgData(int line, int point, float *x, float* y)
           min_y = min(min_y, *y);
           max_y = max(max_y, *y);
       }
-    //scaleFactor = (disparity*0.4) / (max_x-min_x); //fill 40% of disparity as default
   }
   
   if(getNextXY(line, point, x, y)) {
@@ -122,7 +108,6 @@ bool getSvgData(int line, int point, float *x, float* y)
 }
 
 void drawLine(long distanceL, long distanceR){
-  Serial.println("NEWLine");
   StepperMotor leader = motorL;
   StepperMotor runner = motorR;
   int leaderDirection = 1;
@@ -173,11 +158,6 @@ void loop() {
         Serial.println("Plot done");
         delay(500);
       } else {
-        
-  Serial.print(tmpX);
-  Serial.print(" : ");
-  Serial.println(tmpY);
-  
           if (point == 0) {
             servoPen.write(PEN_UP);
             delay(500);
@@ -185,8 +165,8 @@ void loop() {
             servoPen.write(PEN_DOWN);
           }
 
-          float nextX = tmpX*printSize;
-          float nextY = tmpY*printSize;
+          float nextX = tmpX;
+          float nextY = tmpY;
       
           float xL = nextX+centerX;
           float xR = nextX+centerX-disparity;
