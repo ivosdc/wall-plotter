@@ -4,7 +4,8 @@
 
 
 # about this tool
-extracts the svg:path:d information and converts *the points* to the wall-plotter json format:
+*This Version:*
+extracts the first svg:path the :d information and converts *"M x y"* (SVGs/G-code uppercase M paramater) to the wall-plotter json format:
 ```
 <svg xmlns="http://www.w3.org/2000/svg"
      width="8.88889in" height="5.55556in"
@@ -33,19 +34,22 @@ extracts the svg:path:d information and converts *the points* to the wall-plotte
     }
 ]}";
 ```
-Every section "M" or "m" of a svg/xml-path section will be converted into a `points-array` with `X` and `Y` coords.
+Every section "M" of a svg/xml-path section will be converted into a `points-array` with `X` and `Y` coords.
+By the way, the wall-plotter json format corresponds to the svg/G-code *small "m"* parameter.
+Big "M" means absolute X,Y values. Small "m" means the next point X,Y are the diff to the last X,Y.
 
 ## Usage
 ```
 > node svg2json.js example.svg
 ```
-The json-output will be stored as `example.json`.
+The json-output will be stored as `wall-plotter.json`.
 
 
 # how to create a "working" SVG
 
-I'm using `gimp` to create the svg templates. Gimp creates plain path-instructions. Not all SVG-possibilies are supported. Just plain extraction of the `svg:path:-d` information is done.
-The parser crawls and splits "M"/"m" parts in the path and **needs** X and Y information.
+I'm using `gimp` to create the svg templates. Gimp creates path-instructions in a single path-tag with multiple (big) "M" lines.
+Just plain extraction of the `svg:path:-d` information is done.
+The parser crawls and splits "M" parts in the path.
 
 ## In gimp you can convert drawings to path instructions:
 - chose select from alpha (e.g.) (or your prefered selection)

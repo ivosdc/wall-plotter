@@ -28,7 +28,9 @@ long currentLeft = 1000;
 long currentRight = 1000;
 float centerX = 500;
 float centerY = 866; //the height in the triangle
-float printSize = 1.0;
+float zoom = 10.0;
+float lastX = 0;
+float lastY = 0;
 
 int initWifi() {
     int retries = 0;
@@ -75,6 +77,7 @@ bool getPoint(int line, int point, float *x, float* y)
   float newX = doc["lines"][line]["points"][point]["x"];
   float newY = doc["lines"][line]["points"][point]["y"];
   if (newX == 0 && newY == 0) {
+    
     return false;
   }
   *x = newX;
@@ -83,17 +86,15 @@ bool getPoint(int line, int point, float *x, float* y)
   return true; 
 }
 
-void drawLine(long distanceL, long distanceR){
+void drawLine(long distanceR, long distanceL){
   Serial.println("NEWLine");
-  StepperMotor leader = motorL;
-  StepperMotor runner = motorR;
-  int leaderDirection = 1;
-  int runnerDirection = 1;
+  int lDirection = 1;
+  int rDirection = -1;
   if (distanceL < 0) {
-    leaderDirection = leaderDirection * -1;
+    lDirection = lDirection * -1;
   }
   if (distanceR < 0) {
-    runnerDirection = runnerDirection * -1;
+    rDirection = rDirection * -1;
   }
 
   long distL = distanceL;
@@ -104,23 +105,13 @@ void drawLine(long distanceL, long distanceR){
   if (distanceR < 0) {
     distR = distR * -1;
   }
-  long leaderSteps = distL;
-  long runnerSteps = distR;
-  if (distL < distR) {
-    leaderDirection = leaderDirection * -1;
-    runnerDirection = runnerDirection * -1;
-    leaderSteps = distR;
-    runnerSteps = distL;
-    leader = motorR;
-    runner = motorL;
-  }
   long ticks = distL * distR;
   for (long i = 0; i < ticks; i++) {
-    if (i % leaderSteps == 0) {
-       leader.step(STEPS_PER_TICK * leaderDirection);
+    if (i % distR == 0) {
+       motorL.step(STEPS_PER_TICK * lDirection);
     }
-    if (i % runnerSteps == 0) {
-       runner.step(STEPS_PER_TICK * runnerDirection);
+    if (i % distL == 0) {
+       motorR.step(STEPS_PER_TICK * rDirection);
     }
   }
 }
@@ -164,22 +155,24 @@ void loop() {
               } else {
                 servoPen.write(PEN_DOWN);
               }
-
-              float nextX = tmpX*printSize;
-              float nextY = tmpY*printSize;
-              float xL = nextX+centerX;
-              float xR = nextX+centerX-canvasWidth;
-              float y = nextY+centerY;
-
-              long newLeft  = sqrt(xL * xL + y * y);
-              long newRight = sqrt(xR * xR + y * y);
+              float nextX = tmpX * zoom + lastX;
+              float nextY = tmpY * zoom + lastY;
+              float xPosL = nextX + centerX;
+              float xPosR = nextX + centerX - canvasWidth;
+              float yPos  = nextY + centerY;
+              long newLeft  = sqrt(xPosL * xPosL + yPos * yPos);
+              long newRight = sqrt(xPosR * xPosR + yPos * yPos);
               long distanceLeft  = (newLeft  - currentLeft);
               long distanceRight = (newRight - currentRight);
               currentLeft = newLeft;
               currentRight = newRight;
+              lastX = nextX;
+              lastY = nextY;
               drawLine(distanceLeft, distanceRight);
            }
         }
       }
     }
 }
+
+
