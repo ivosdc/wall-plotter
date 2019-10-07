@@ -30,7 +30,7 @@ long currentLeft = canvasWidth;
 long currentRight = canvasWidth;
 float centerX = canvasWidth / 2;;
 float centerY = 866; //the height in the triangle
-float zoom = 1.0;
+float zoom = 2.0;
 static float lastX = 0;
 static float lastY = 0;
 
@@ -93,12 +93,12 @@ bool getPoint(int line, int point, float *x, float* y)
 {
     float newX = doc["lines"][line]["points"][point]["x"];
     float newY = doc["lines"][line]["points"][point]["y"];
-    if (newX == 0 && newY == 0) {
+    if (doc["lines"][line]["points"][point]["x"] == nullptr && doc["lines"][line]["points"][point]["y"] == nullptr) {
 
         return false;
     }
-    *x = newX;
-    *y = newY;
+    *x = newX * zoom;
+    *y = newY * zoom;
 
     return true;
 }
@@ -136,8 +136,8 @@ void getDistance(float x, float y, long *distanceLeft, long *distanceRight) {
     float yPos  = nextY + centerY;
     long newLeft  = sqrt(pow(leftX, 2) + pow(yPos, 2));
     long newRight = sqrt(pow(rightX, 2) + pow(yPos, 2));
-    *distanceLeft  = (newLeft - currentLeft) * STEPS_PER_MM * zoom;
-    *distanceRight = (newRight - currentRight) * STEPS_PER_MM * zoom;
+    *distanceLeft  = (newLeft - currentLeft) * STEPS_PER_MM;
+    *distanceRight = (newRight - currentRight) * STEPS_PER_MM;
     currentLeft = newLeft;
     currentRight = newRight;
     lastX = nextX;
@@ -167,7 +167,7 @@ void loop() {
                 float tmpY = 0;
                 if(!getPoint(line, point, &tmpX, &tmpY)) {
                     servoPen.write(PEN_UP);
-                    Serial.println("Plot done");
+                    Serial.println("Plot error");
                     printing = false;
                     break;
                 } else {
@@ -186,6 +186,9 @@ void loop() {
                 }
             }
         }
+        servoPen.write(PEN_UP);
+        Serial.println("Plot error");
+        printing = false;
     }
 }
 
