@@ -10,6 +10,9 @@ My needs were to use a Node-MCU board instead of a *poor* Arduino. In the ongoin
 
 - build converters for 2D g-code templates and / or SVGs to wall-plotter.json format. Started with SVGs-"M" path conditions to wall-plotter.json. Have a look at the cli tool svg2json
 - create a basic frontend / SPA
+- upload data
+- setup zoom-factor, start/zero point, canvas width.
+- preprocess data (errors, preview)
 
 ### Hardware:
 - 1 x NodeMCU 12e (ESP8266)
