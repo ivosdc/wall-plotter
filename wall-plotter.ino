@@ -6,24 +6,26 @@
 
 #define SERVO_PIN D9
 #define WIFI_INIT_RETRY 10
-#define PEN_UP 70
-#define PEN_DOWN 25
+#define PEN_UP 30
+#define PEN_DOWN 70
 #define STEPS_PER_TICK 10
 #define SPOOL_CIRC 94.2 
 #define STEPS_PER_ROTATION 4075.7728395
 #define STEPS_PER_MM  (STEPS_PER_ROTATION / SPOOL_CIRC) / STEPS_PER_TICK
 
 
+StepperMotor motorLeft(D5, D6, D7, D8); // IN1, IN2, IN3, IN4
+StepperMotor motorRight(D1,D2,D3,D4);
+const int motorLeftDirection = -1;
+const int motorRightDirection = 1;
+int motorSpeed = 3;
+Servo servoPen;
 
 const char* ssid  = "SSID";
 const char* password = "PASSWORD";
-StepperMotor motorL(D1,D2,D3,D4); // IN1, IN2, IN3, IN4
-StepperMotor motorR(D5, D6, D7, D8);
 ESP8266WebServer server(80);
 
-Servo servoPen;
 StaticJsonDocument<10000> doc;
-int motorSpeed = 3;
 bool printing = true;
 long canvasWidth = 1000;
 long currentLeft = canvasWidth;
@@ -55,8 +57,8 @@ int initServer() {
 }
 
 void initMotors() {
-    motorL.setStepDuration(motorSpeed);
-    motorR.setStepDuration(motorSpeed);
+    motorLeft.setStepDuration(motorSpeed);
+    motorRight.setStepDuration(motorSpeed);
 
     servoPen.attach(SERVO_PIN);
     servoPen.write(PEN_UP);
@@ -103,26 +105,26 @@ bool getPoint(int line, int point, float *x, float* y)
     return true;
 }
 
-void drawLine(long distanceL, long distanceR){
-    int directionL = -1;
-    int directionR = 1;
-    long distL = distanceL;
-    long distR = distanceR;
-    if (distanceL < 0) {
-        directionL = directionL * -1;
+void drawLine(long distanceLeft, long distanceRight){
+    int directionLeft = motorLeftDirection;
+    int directionRight = motorRightDirection;
+    long distL = distanceLeft;
+    long distR = distanceRight;
+    if (distanceLeft < 0) {
+        directionLeft = directionLeft * -1;
         distL = distL * -1;
     }
-    if (distanceR < 0) {
-        directionR = directionR * -1;
+    if (distanceRight < 0) {
+        directionRight = directionRight * -1;
         distR = distR * -1;
     }
     long ticks = distL * distR;
     for (long i = 1; i <= ticks; i++) {
         if (i % distL == 0) {
-            motorL.step(STEPS_PER_TICK * directionR);
+            motorLeft.step(STEPS_PER_TICK * directionRight);
         }
         if (i % distR == 0) {
-            motorR.step(STEPS_PER_TICK * directionL);
+            motorRight.step(STEPS_PER_TICK * directionLeft);
         }
         yield();
     }

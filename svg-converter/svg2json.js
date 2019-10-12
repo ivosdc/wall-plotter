@@ -10,7 +10,9 @@ var mEntries = pathInfo.split("M");
 var lines = [];
 mEntries.forEach( line  => {
     if (line.trim() != '') {
-        lines.push(line.trim().replace(/\s\s+/g, ' ')); // strip out double blanks
+        lines.push(line.trim().replace('C', '')
+            .replace('Z', '')
+            .replace(/\s\s+/g, ' '));
     }
 });
 var wallPlotterJson = {lines: []};
@@ -23,8 +25,8 @@ lines.forEach( line => {
                     y: parseFloat(xy[1])};
 
         if (!isNaN(point.x) && !isNaN(point.y))  {
-            point.x = parseFloat(xy[0]) - lastPoint.x;
-            point.y = parseFloat(xy[1]) - lastPoint.y;
+            point.x = parseFloat(xy[0]) - parseFloat(lastPoint.x);
+            point.y = parseFloat(xy[1]) - parseFloat(lastPoint.y);
             lastPoint.x = parseFloat(xy[0]);
             lastPoint.y = parseFloat(xy[1]);
             points.points.push(point);
@@ -32,12 +34,18 @@ lines.forEach( line => {
     });
     wallPlotterJson.lines.push(points);
 })
+
+var filteredPlotData = {lines: []};
 wallPlotterJson.lines.forEach(line => {
-   line.points.forEach(point => {
-       point.x = parseFloat(point.x).toFixed(2);
-       point.y = parseFloat(point.y).toFixed(2);
-   });
+    var points = {points: []};
+    line.points.forEach(point => {
+       point.x = (Math.round(parseFloat(point.x) * 10) / 10).toFixed(2);
+       point.y = (Math.round(parseFloat(point.y) * 10) / 10).toFixed(2);
+       points.points.push(point);
+    });
+    filteredPlotData.lines.push(points);
 });
+wallPlotterJson = filteredPlotData;
 
 fs.writeFile('wall-plotter.json', JSON.stringify(wallPlotterJson), 'utf8', f => {
     console.log(JSON.stringify(wallPlotterJson));
