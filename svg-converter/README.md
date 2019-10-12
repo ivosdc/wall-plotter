@@ -38,6 +38,13 @@ Every section "M" of a svg/xml-path section will be converted into a `points-arr
 By the way, the wall-plotter json format corresponds to the svg/G-code *small "m"* parameter.
 Big "M" means absolute X,Y values. Small "m" means the next point X,Y are the diff to the last X,Y.
 
+I found a good explanation of the svg-path:  https://css-tricks.com/svg-path-syntax-illustrated-guide/ .
+
+
+We currently struggle with the big `"M"` only!
+
+L, l, H, h, V, v and  m have to be done... Contributers welcome ;)
+
 ## Usage
 ```
 > node svg2json.js example.svg
