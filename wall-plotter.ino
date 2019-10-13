@@ -42,6 +42,8 @@ float centerX = canvasWidth / 2;
 float centerY = 866; //the height in the triangle
 static float lastX = 0;
 static float lastY = 0;
+static float homeX = 0;
+static float homeY = 0;
 
 char configData[] = "{\"server\":{\"ssid\":\"ssid\",\"password\":\"password\"},\"plotter\":{\"canvasWidth\":\"canvasWidth\",\"currentLeft\":\"currentLeft\",\"currentRight\":\"currentRight\",\"centerX\":\"centerX\",\"centerY\":\"centerY\",\"zoomFactor\":\"zoomFactor\"}}";
 
@@ -144,13 +146,11 @@ bool initPlot(String json) {
     if (DeserializationError error = deserializeJson(plotJson, json)) {
         Serial.println("error parsing json");
         server.send(400);
-
         return false;
     }
     printing = true;
     server.sendHeader("Location", "/plot/");
     server.send(201);
-
 
     return true;
 }
@@ -160,11 +160,27 @@ void postPlot() {
     initPlot(body);
 }
 
+bool postZoomFactor() {
+    StaticJsonDocument<50> zoomJson;
+    String body = server.arg("plain");
+    if (DeserializationError error = deserializeJson(zoomJson, body)) {
+        Serial.println("error parsing json");
+        server.send(400);
+        return false;
+    }
+    zoomFactor = zoomJson["zoomFactor"];
+    server.sendHeader("Location", "zoom:" + String(zoomFactor));
+    server.send(201);
+
+    return true;
+}
+
 void serverRouting() {
     server.on("/", HTTP_GET, []() {
-        server.send(200, "text/html", "/plot");
+        server.send(200, "text/html", "/plot /zoomfactor");
     });
     server.on("/plot", HTTP_POST, postPlot);
+    server.on("/zoomfactor", HTTP_POST, postZoomFactor);
 }
 
 bool getPoint(int line, int point, float *x, float* y)
@@ -175,8 +191,10 @@ bool getPoint(int line, int point, float *x, float* y)
 
         return false;
     }
-    *x = newX * zoom;
-    *y = newY * zoom;
+    *x = newX;
+    *y = newY;
+    homeX = homeX + newX;
+    homeY = homeY + newY;
 
     return true;
 }
@@ -222,6 +240,17 @@ void getDistance(float x, float y, long *distanceLeft, long *distanceRight) {
     lastY = nextY;
 }
 
+void goHome() {
+    long distanceLeft = 0;
+    long distanceRight = 0;
+    homeX = homeX * -1;
+    homeY = homeY * -1;
+    getDistance(homeX,homeY, &distanceLeft, &distanceRight);
+    drawLine(distanceLeft, distanceRight);
+    homeX = 0;
+    homeY = 0;
+}
+
 void setup()
 {
     Serial.begin(9600);
@@ -248,8 +277,9 @@ void loop() {
                 float tmpY = 0;
                 if(!getPoint(line, point, &tmpX, &tmpY)) {
                     servoPen.write(PEN_UP);
-                    Serial.println("Plot error");
+                    Serial.println("Plot error.");
                     printing = false;
+                    goHome();
                     break;
                 } else {
                     if (point == 0) {
@@ -260,16 +290,13 @@ void loop() {
                     long distanceLeft = 0;
                     long distanceRight = 0;
                     getDistance(tmpX,tmpY, &distanceLeft, &distanceRight);
-                    Serial.print(distanceLeft);
-                    Serial.print("   distance   ");
-                    Serial.println(distanceRight);
                     drawLine(distanceLeft, distanceRight);
                 }
             }
         }
         servoPen.write(PEN_UP);
-        Serial.println("Plot error");
+        Serial.println("Plot done.");
         printing = false;
+        goHome();
     }
 }
-
