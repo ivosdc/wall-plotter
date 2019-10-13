@@ -2,6 +2,7 @@
 #include <ArduinoJson.h>
 #include <StepperMotor.h>
 #include <ESP8266WebServer.h>
+#include "FS.h"
 
 
 #define SERVO_PIN D9
@@ -14,7 +15,7 @@
 #define STEPS_PER_MM  (STEPS_PER_ROTATION / SPOOL_CIRC) / STEPS_PER_TICK
 
 float zoomFactor = 1;
-float zoom = (zoomFactor / STEPS_PER_TICK) * STEPS_PER_MM;
+float zoom = getZoom(zoomFactor);
 StepperMotor motorLeft(D5, D6, D7, D8); // IN1, IN2, IN3, IN4
 StepperMotor motorRight(D1,D2,D3,D4);
 const int motorLeftDirection = -1;
@@ -26,17 +27,43 @@ const char* ssid  = "SSID";
 const char* password = "PASSWORD";
 ESP8266WebServer server(80);
 
-StaticJsonDocument<10000> doc;
+StaticJsonDocument<10000> plotJson;
+StaticJsonDocument<100> configJson;
 bool printing = true;
 long canvasWidth = 1000;
 long currentLeft = canvasWidth;
 long currentRight = canvasWidth;
-float centerX = canvasWidth / 2;;
+float centerX = canvasWidth / 2;
 float centerY = 866; //the height in the triangle
 static float lastX = 0;
 static float lastY = 0;
+char config[] = "{\"server\":{\"ssid\":\"ssid\",\"password\":\"password\"},\"plotter\":{\"canvasWidth\":\"canvasWidth\",\"currentLeft\":\"currentLeft\",\"currentRight\":\"currentRight\",\"centerX\":\"centerX\",\"centerY\":\"centerY\",\"zoomFactor\":\"zoomFactor\"}}";
 
-char plotJson[] = "{\"lines\":[{\"points\":[{\"x\":\"243.98\",\"y\":\"102.51\"},{\"x\":\"6.00\",\"y\":\"-2.00\"},{\"x\":\"5.80\",\"y\":\"-7.39\"},{\"x\":\"-4.52\",\"y\":\"-7.10\"},{\"x\":\"-8.77\",\"y\":\"-3.81\"},{\"x\":\"-26.60\",\"y\":\"-8.78\"},{\"x\":\"-3.10\",\"y\":\"-22.43\"},{\"x\":\"4.09\",\"y\":\"-10.17\"},{\"x\":\"16.57\",\"y\":\"-6.44\"},{\"x\":\"12.55\",\"y\":\"2.22\"},{\"x\":\"2.81\",\"y\":\"0.50\"},{\"x\":\"7.51\",\"y\":\"1.21\"},{\"x\":\"1.66\",\"y\":\"2.24\"},{\"x\":\"1.38\",\"y\":\"1.87\"},{\"x\":\"-0.36\",\"y\":\"5.19\"},{\"x\":\"0.00\",\"y\":\"2.38\"},{\"x\":\"-8.59\",\"y\":\"-3.64\"},{\"x\":\"-10.00\",\"y\":\"-4.57\"},{\"x\":\"-9.41\",\"y\":\"3.47\"},{\"x\":\"-6.16\",\"y\":\"2.27\"},{\"x\":\"-5.21\",\"y\":\"7.11\"},{\"x\":\"4.11\",\"y\":\"6.32\"},{\"x\":\"7.34\",\"y\":\"9.28\"},{\"x\":\"23.81\",\"y\":\"4.64\"},{\"x\":\"6.55\",\"y\":\"7.12\"},{\"x\":\"0.95\",\"y\":\"2.49\"},{\"x\":\"-0.87\",\"y\":\"14.51\"},{\"x\":\"-6.63\",\"y\":\"10.76\"},{\"x\":\"-17.36\",\"y\":\"3.77\"},{\"x\":\"-12.53\",\"y\":\"-0.53\"},{\"x\":\"-3.06\",\"y\":\"-2.62\"},{\"x\":\"-7.11\",\"y\":\"-1.31\"},{\"x\":\"-1.81\",\"y\":\"-2.58\"},{\"x\":\"-1.38\",\"y\":\"-1.96\"},{\"x\":\"0.36\",\"y\":\"-5.08\"},{\"x\":\"0.00\",\"y\":\"-2.45\"},{\"x\":\"10.03\",\"y\":\"4.31\"},{\"x\":\"9.75\",\"y\":\"5.12\"},{\"x\":\"11.22\",\"y\":\"-3.65\"}]},{\"points\":[{\"x\":\"-193.00\",\"y\":\"-64.78\"},{\"x\":\"9.32\",\"y\":\"26.00\"},{\"x\":\"13.68\",\"y\":\"35.00\"},{\"x\":\"15.32\",\"y\":\"-42.00\"},{\"x\":\"1.23\",\"y\":\"-3.32\"},{\"x\":\"4.13\",\"y\":\"-12.19\"},{\"x\":\"2.02\",\"y\":\"-1.89\"},{\"x\":\"2.27\",\"y\":\"-2.14\"},{\"x\":\"5.03\",\"y\":\"0.54\"},{\"x\":\"3.00\",\"y\":\"0.00\"},{\"x\":\"-21.19\",\"y\":\"56.00\"},{\"x\":\"-2.08\",\"y\":\"5.47\"},{\"x\":\"-1.94\",\"y\":\"10.91\"},{\"x\":\"-6.81\",\"y\":\"0.56\"},{\"x\":\"-9.13\",\"y\":\"0.76\"},{\"x\":\"0.56\",\"y\":\"-4.58\"},{\"x\":\"-4.81\",\"y\":\"-12.12\"},{\"x\":\"-21.60\",\"y\":\"-57.00\"},{\"x\":\"11.00\",\"y\":\"0.00\"}]},{\"points\":[{\"x\":\"70.37\",\"y\":\"0.13\"},{\"x\":\"-0.90\",\"y\":\"1.25\"},{\"x\":\"3.40\",\"y\":\"13.62\"},{\"x\":\"2.52\",\"y\":\"10.08\"},{\"x\":\"5.33\",\"y\":\"27.45\"},{\"x\":\"4.28\",\"y\":\"7.47\"},{\"x\":\"14.00\",\"y\":\"-60.00\"},{\"x\":\"12.00\",\"y\":\"0.00\"},{\"x\":\"7.63\",\"y\":\"32.00\"},{\"x\":\"7.37\",\"y\":\"29.00\"},{\"x\":\"10.13\",\"y\":\"-42.00\"},{\"x\":\"0.77\",\"y\":\"-3.09\"},{\"x\":\"2.71\",\"y\":\"-12.56\"},{\"x\":\"1.53\",\"y\":\"-1.78\"},{\"x\":\"1.86\",\"y\":\"-2.17\"},{\"x\":\"5.31\",\"y\":\"0.60\"},{\"x\":\"2.69\",\"y\":\"0.00\"},{\"x\":\"-18.00\",\"y\":\"73.00\"},{\"x\":\"-13.00\",\"y\":\"0.00\"},{\"x\":\"-14.00\",\"y\":\"-61.00\"},{\"x\":\"-2.00\",\"y\":\"0.00\"},{\"x\":\"-14.00\",\"y\":\"61.00\"},{\"x\":\"-13.00\",\"y\":\"0.00\"},{\"x\":\"-18.00\",\"y\":\"-73.00\"},{\"x\":\"4.00\",\"y\":\"0.00\"}]}]}";
+char plotData[] = "{\"lines\":[{\"points\":[{\"x\":\"243.98\",\"y\":\"102.51\"},{\"x\":\"6.00\",\"y\":\"-2.00\"},{\"x\":\"5.80\",\"y\":\"-7.39\"},{\"x\":\"-4.52\",\"y\":\"-7.10\"},{\"x\":\"-8.77\",\"y\":\"-3.81\"},{\"x\":\"-26.60\",\"y\":\"-8.78\"},{\"x\":\"-3.10\",\"y\":\"-22.43\"},{\"x\":\"4.09\",\"y\":\"-10.17\"},{\"x\":\"16.57\",\"y\":\"-6.44\"},{\"x\":\"12.55\",\"y\":\"2.22\"},{\"x\":\"2.81\",\"y\":\"0.50\"},{\"x\":\"7.51\",\"y\":\"1.21\"},{\"x\":\"1.66\",\"y\":\"2.24\"},{\"x\":\"1.38\",\"y\":\"1.87\"},{\"x\":\"-0.36\",\"y\":\"5.19\"},{\"x\":\"0.00\",\"y\":\"2.38\"},{\"x\":\"-8.59\",\"y\":\"-3.64\"},{\"x\":\"-10.00\",\"y\":\"-4.57\"},{\"x\":\"-9.41\",\"y\":\"3.47\"},{\"x\":\"-6.16\",\"y\":\"2.27\"},{\"x\":\"-5.21\",\"y\":\"7.11\"},{\"x\":\"4.11\",\"y\":\"6.32\"},{\"x\":\"7.34\",\"y\":\"9.28\"},{\"x\":\"23.81\",\"y\":\"4.64\"},{\"x\":\"6.55\",\"y\":\"7.12\"},{\"x\":\"0.95\",\"y\":\"2.49\"},{\"x\":\"-0.87\",\"y\":\"14.51\"},{\"x\":\"-6.63\",\"y\":\"10.76\"},{\"x\":\"-17.36\",\"y\":\"3.77\"},{\"x\":\"-12.53\",\"y\":\"-0.53\"},{\"x\":\"-3.06\",\"y\":\"-2.62\"},{\"x\":\"-7.11\",\"y\":\"-1.31\"},{\"x\":\"-1.81\",\"y\":\"-2.58\"},{\"x\":\"-1.38\",\"y\":\"-1.96\"},{\"x\":\"0.36\",\"y\":\"-5.08\"},{\"x\":\"0.00\",\"y\":\"-2.45\"},{\"x\":\"10.03\",\"y\":\"4.31\"},{\"x\":\"9.75\",\"y\":\"5.12\"},{\"x\":\"11.22\",\"y\":\"-3.65\"}]},{\"points\":[{\"x\":\"-193.00\",\"y\":\"-64.78\"},{\"x\":\"9.32\",\"y\":\"26.00\"},{\"x\":\"13.68\",\"y\":\"35.00\"},{\"x\":\"15.32\",\"y\":\"-42.00\"},{\"x\":\"1.23\",\"y\":\"-3.32\"},{\"x\":\"4.13\",\"y\":\"-12.19\"},{\"x\":\"2.02\",\"y\":\"-1.89\"},{\"x\":\"2.27\",\"y\":\"-2.14\"},{\"x\":\"5.03\",\"y\":\"0.54\"},{\"x\":\"3.00\",\"y\":\"0.00\"},{\"x\":\"-21.19\",\"y\":\"56.00\"},{\"x\":\"-2.08\",\"y\":\"5.47\"},{\"x\":\"-1.94\",\"y\":\"10.91\"},{\"x\":\"-6.81\",\"y\":\"0.56\"},{\"x\":\"-9.13\",\"y\":\"0.76\"},{\"x\":\"0.56\",\"y\":\"-4.58\"},{\"x\":\"-4.81\",\"y\":\"-12.12\"},{\"x\":\"-21.60\",\"y\":\"-57.00\"},{\"x\":\"11.00\",\"y\":\"0.00\"}]},{\"points\":[{\"x\":\"70.37\",\"y\":\"0.13\"},{\"x\":\"-0.90\",\"y\":\"1.25\"},{\"x\":\"3.40\",\"y\":\"13.62\"},{\"x\":\"2.52\",\"y\":\"10.08\"},{\"x\":\"5.33\",\"y\":\"27.45\"},{\"x\":\"4.28\",\"y\":\"7.47\"},{\"x\":\"14.00\",\"y\":\"-60.00\"},{\"x\":\"12.00\",\"y\":\"0.00\"},{\"x\":\"7.63\",\"y\":\"32.00\"},{\"x\":\"7.37\",\"y\":\"29.00\"},{\"x\":\"10.13\",\"y\":\"-42.00\"},{\"x\":\"0.77\",\"y\":\"-3.09\"},{\"x\":\"2.71\",\"y\":\"-12.56\"},{\"x\":\"1.53\",\"y\":\"-1.78\"},{\"x\":\"1.86\",\"y\":\"-2.17\"},{\"x\":\"5.31\",\"y\":\"0.60\"},{\"x\":\"2.69\",\"y\":\"0.00\"},{\"x\":\"-18.00\",\"y\":\"73.00\"},{\"x\":\"-13.00\",\"y\":\"0.00\"},{\"x\":\"-14.00\",\"y\":\"-61.00\"},{\"x\":\"-2.00\",\"y\":\"0.00\"},{\"x\":\"-14.00\",\"y\":\"61.00\"},{\"x\":\"-13.00\",\"y\":\"0.00\"},{\"x\":\"-18.00\",\"y\":\"-73.00\"},{\"x\":\"4.00\",\"y\":\"0.00\"}]}]}";
+
+float getZoom(float zoomFactor) {
+    return (zoomFactor / STEPS_PER_TICK) * STEPS_PER_MM;
+}
+
+bool initConfig() {
+    if (DeserializationError error = deserializeJson(configJson, config)) {
+        Serial.println("error parsing json");
+
+        return false;
+    }
+    // defaults
+    configJson["server"]["ssid"] = ssid;
+    configJson["server"]["password"] = password;
+    configJson["plotter"]["canvasWidth"] = canvasWidth;
+    configJson["plotter"]["currentLeft"] = canvasWidth;
+    configJson["plotter"]["currentRight"] = canvasWidth;
+    configJson["plotter"]["centerX"] = canvasWidth / 2;
+    configJson["plotter"]["centerY"] = 866; //the height in the triangle
+    configJson["plotter"]["zoomFactor"] = zoomFactor;
+    zoom = getZoom(zoomFactor);
+
+    return true;
+}
 
 int initServer() {
     int retries = 0;
@@ -64,8 +91,37 @@ void initMotors() {
     servoPen.write(PEN_UP);
 }
 
+void initFileSystem() {
+    initConfig();
+
+    SPIFFS.begin();
+    File f = SPIFFS.open("/config.json", "w");
+    if (!f) {
+        Serial.println("file open w failed");
+        Serial.println("Please wait 30 secs for SPIFFS to be formatted");
+        SPIFFS.format();
+        Serial.println("Spiffs formatted");
+     }
+    File f = SPIFFS.open("/config.json", "w");
+    if (!f) {
+        serializeJson(configJson, config);
+        f.println(config);
+    }
+    f.close();
+
+    f = SPIFFS.open("/config.json", "r");
+    if (!f) {
+        Serial.println("file open r failed");
+    } else {
+        config = f.readStringUntil('\n');
+        Serial.println(s);
+        initConfig();
+    }
+    f.close();
+}
+
 bool initPlot(String json) {
-    if (DeserializationError error = deserializeJson(doc, json)) {
+    if (DeserializationError error = deserializeJson(plotJson, json)) {
         Serial.println("error parsing json");
         server.send(400);
 
@@ -93,9 +149,9 @@ void serverRouting() {
 
 bool getPoint(int line, int point, float *x, float* y)
 {
-    float newX = doc["lines"][line]["points"][point]["x"];
-    float newY = doc["lines"][line]["points"][point]["y"];
-    if (doc["lines"][line]["points"][point]["x"] == nullptr && doc["lines"][line]["points"][point]["y"] == nullptr) {
+    float newX = plotJson["lines"][line]["points"][point]["x"];
+    float newY = plotJson["lines"][line]["points"][point]["y"];
+    if (plotJson["lines"][line]["points"][point]["x"] == nullptr && plotJson["lines"][line]["points"][point]["y"] == nullptr) {
 
         return false;
     }
@@ -150,12 +206,14 @@ void setup()
 {
     Serial.begin(9600);
     Serial.println("Setup");
+    initFileSystem();
+
     Serial.print("Canvas width:");
     Serial.println(canvasWidth);
 
     initMotors();
     Serial.println(initServer());
-    Serial.println(initPlot(plotJson));
+    Serial.println(initPlot(plotData));
 
     delay(5000);
 }
@@ -163,8 +221,8 @@ void setup()
 void loop() {
     server.handleClient();
     if (printing) {
-        for (int line = 0; line < doc["lines"].size(); line++) {
-            for (int point = 0; point < doc["lines"][line]["points"].size(); point++) {
+        for (int line = 0; line < plotJson["lines"].size(); line++) {
+            for (int point = 0; point < plotJson["lines"][line]["points"].size(); point++) {
                 float tmpX = 0;
                 float tmpY = 0;
                 if(!getPoint(line, point, &tmpX, &tmpY)) {

@@ -53,6 +53,7 @@ lines.forEach( line => {
     wallPlotterJson.lines.push(points);
 })
 
+
 //collect small values and add them to a valid "point"-value
 var filteredPlotData = {lines: []};
 var smallPoint = {x: 0,y: 0};
@@ -61,11 +62,11 @@ wallPlotterJson.lines.forEach(line => {
     line.points.forEach(point => {
        point.x = parseFloat(point.x);
        point.y = parseFloat(point.y);
-       if (Math.abs(point.x) < 1 && Math.abs(point.y) < 1) {
+       if (Math.abs(point.x) < 0.5 && Math.abs(point.y) < 0.5) {
            smallPoint.x += point.x;
            smallPoint.y += point.y;
        }
-       if ((Math.abs(point.x) > 1) || (Math.abs(point.y) > 1)) {
+       if ((Math.abs(point.x) >= 0.5) || (Math.abs(point.y) >= 0.5)) {
            point.x += parseFloat(smallPoint.x);
            point.y += parseFloat(smallPoint.y);
            point.x = (point.x).toFixed(2);
@@ -74,7 +75,7 @@ wallPlotterJson.lines.forEach(line => {
            smallPoint.x = 0;
            smallPoint.y = 0;
        }
-       if (Math.abs(parseInt(smallPoint.x)) >= 1 || Math.abs(parseInt(smallPoint.y)) >= 1) {
+       if (Math.abs(parseInt(smallPoint.x)) >= 0.5 || Math.abs(parseInt(smallPoint.y)) >= 0.5) {
            smallPoint.x = (smallPoint.x).toFixed(2);
            smallPoint.y = (smallPoint.y).toFixed(2);
            points.points.push(smallPoint);
