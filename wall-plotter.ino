@@ -64,8 +64,6 @@ void initAccessPoint() {
     static char szSSID[12];
     sprintf(szSSID, "WallPlotter %02d", ESP.getChipId() % 100);
     Serial.println(szSSID);
-    Serial.print("IP: ");
-    Serial.println(accessPointIP);
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
     delay(100);
@@ -88,7 +86,11 @@ void initAccessPoint() {
     WiFi.mode(WIFI_AP);
     WiFi.softAPConfig(accessPointIP, accessPointIP, netMask);
     WiFi.softAP(szSSID);
-    delay(100);
+    yield();
+    WiFi.persistent(false);
+    WiFi.begin();
+    Serial.print("IP: ");
+    Serial.println(WiFi.softAPIP());
 }
 
 void initConfig() {
@@ -123,7 +125,7 @@ bool setConfig() {
     return true;
 }
 
-int initServer() {
+void initServer() {
     int retries = 0;
     Serial.println("Connecting...");
     WiFi.mode(WIFI_STA);
@@ -133,12 +135,15 @@ int initServer() {
       delay(1000);
       Serial.print("#");
     }
+    if (WiFi.status() == 1) {
+        initDNS();
+        initAccessPoint();
+    } else {
+        Serial.println(WiFi.localIP());
+    }
 
     server.begin();
-    Serial.println(WiFi.localIP());
     serverRouting();
-
-    return WiFi.status();
 }
 
 void initMotors() {
@@ -329,10 +334,7 @@ void setup()
     Serial.println(canvasWidth);
 
     initMotors();
-    if(initServer() == 1){
-        initDNS();
-        initAccessPoint();
-    }
+    initServer();
     Serial.println(initPlot(plotData));
 
     delay(5000);
