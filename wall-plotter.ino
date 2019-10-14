@@ -105,8 +105,8 @@ void initConfig() {
     serializeJson(configJson, configData);
 }
 
-bool setConfig(char data[]) {
-    if (DeserializationError error = deserializeJson(configJson, data)) {
+bool setConfig() {
+    if (DeserializationError error = deserializeJson(configJson, configData)) {
         Serial.println("error parsing json");       
         return false;
     }
@@ -171,12 +171,14 @@ void initFileSystem() {
             writeConfig();
         } else {
             Serial.println("config.json found:");
-            setConfig(configFile);
+            memcpy(configData,configFile, strlen(configFile) + 2);
+            setConfig();
         }
     }
 }
 
 void writeConfig() {
+    SPIFFS.remove("/config.json");
     initConfig();
     File f = SPIFFS.open("/config.json", "w");
     int bytesWritten = f.println(configData);
