@@ -7,7 +7,7 @@
 #include <ESP8266WiFi.h>
 
 #define SERVO_PIN D9
-#define WIFI_INIT_RETRY 10
+#define WIFI_INIT_RETRY 20
 #define PEN_UP 30
 #define PEN_DOWN 70
 #define SPOOL_CIRC 94.2 
@@ -34,10 +34,9 @@ const char* password = "PASSWORD";
 ESP8266WebServer server(80);
 IPAddress accessPointIP(192, 168, 0, 1);  
 IPAddress netMask(255, 255, 255, 0);
-
 DNSServer dnsServer;
 StaticJsonDocument<10000> plotJson;
-StaticJsonDocument<1000> configJson;
+StaticJsonDocument<500> configJson;
 bool printing = true;
 long canvasWidth = 1000;
 long currentLeft = canvasWidth;
@@ -106,8 +105,8 @@ void initConfig() {
     serializeJson(configJson, configData);
 }
 
-bool setConfig() {
-    if (DeserializationError error = deserializeJson(configJson, configData)) {
+bool setConfig(char data[]) {
+    if (DeserializationError error = deserializeJson(configJson, data)) {
         Serial.println("error parsing json");       
         return false;
     }
@@ -127,29 +126,26 @@ bool setConfig() {
 
 void initServer() {
     int retries = 0;
-    Serial.println("Connecting...");
+    Serial.print("Connecting: ");
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
     while ((WiFi.status() != WL_CONNECTED) && (retries < WIFI_INIT_RETRY)) {
-      retries++;
-      delay(1000);
-      Serial.print("#");
+        retries++;
+        delay(1000);
+        Serial.print(".");
     }
+    Serial.println(WiFi.status() == 1 ? " failed" : " ok");
     if (WiFi.status() == 1) {
         initDNS();
         initAccessPoint();
     } else {
         Serial.println(WiFi.localIP());
     }
-
-    server.begin();
-    serverRouting();
 }
 
 void initMotors() {
     motorLeft.setStepDuration(motorSpeed);
     motorRight.setStepDuration(motorSpeed);
-
     servoPen.attach(SERVO_PIN);
     servoPen.write(PEN_UP);
 }
@@ -161,37 +157,47 @@ void initFileSystem() {
     // check if valid config.json exist else create one
     File f = SPIFFS.open("/config.json", "r");
     if (!f) {
-        Serial.println("file open r failed");
-        Serial.println("Please wait 30 secs for SPIFFS to be formatted");
+        Serial.println("read file failed");
+        Serial.println("Please wait... formatting");
         SPIFFS.format();
-        Serial.println("Spiffs formatted");
-        f = SPIFFS.open("/config.json", "w");
-        Serial.println("writing config.json");
-        Serial.println(configData);
-        f.println(configData);
+        Serial.println("Done.");
+        writeConfig();
     } else {
         f.readStringUntil('\n').toCharArray(configFile, 1000);
         f.close();
-        f = SPIFFS.open("/config.json", "w");
+        Serial.println();        
         if (strlen(configFile) == 0) {
             Serial.println("writing config.json");
-            Serial.println(configData);
-            f.println(configData);
+            writeConfig();
         } else {
             Serial.println("config.json found:");
-            Serial.println(configFile);
-            memcpy(configData,configFile, strlen(configFile));
-            setConfig();
+            setConfig(configFile);
         }
     }
-    f.close();
 }
 
 void writeConfig() {
     initConfig();
     File f = SPIFFS.open("/config.json", "w");
-    f.println(configData);
+    int bytesWritten = f.println(configData);
     f.close();
+    if (bytesWritten > 0) {
+        Serial.println("Config written");
+        Serial.println(bytesWritten);
+     
+    } else {
+        Serial.println("Config write failed");
+    }
+}
+
+void readPlot() {
+    File f = SPIFFS.open("/wall-plotter.data", "r");
+    f.readStringUntil('\n').toCharArray(plotData, 10000);
+}
+
+void getPlot() {
+    readPlot();
+    server.send(201, "text/plain", plotData);
 }
 
 bool initPlot(String json) {
@@ -202,8 +208,7 @@ bool initPlot(String json) {
         return false;
     }
     printing = true;
-    server.sendHeader("Location", "/plot/");
-    server.send(201);
+    server.send(201, "text/plain", "plot starting");
 
     return true;
 }
@@ -222,8 +227,7 @@ bool postZoomFactor() {
         return false;
     }
     zoomFactor = zoomJson["zoomFactor"];
-    server.sendHeader("Location", "zoom:" + String(zoomFactor));
-    server.send(201);
+    server.send(201, "text/plain", "zoom:" + String(zoomFactor));
     writeConfig();
 
     return true;
@@ -239,20 +243,45 @@ bool postWlanSettings() {
     }
     ssid = wlanJson["ssid"];
     password = wlanJson["password"];
-    server.sendHeader("Location", "wlan:" + String(ssid));
-    server.send(201);
+    server.send(201, "text/plain", "wlan:" + String(ssid));
     writeConfig();
+    initServer();
 
     return true;
 }
+
+void postFileUpload(){
+    File fsUploadFile;
+    server.send(200);
+    HTTPUpload& upload = server.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+        String filename = "wall-plotter.data";
+        fsUploadFile = SPIFFS.open(filename, "w");
+        filename = String();
+    } else if((upload.status == UPLOAD_FILE_WRITE) && fsUploadFile) {
+        fsUploadFile.write(upload.buf, upload.currentSize);
+    } else if(upload.status == UPLOAD_FILE_END) {
+        if(fsUploadFile) {
+            fsUploadFile.close();
+            Serial.print(" Size: ");
+            Serial.println(upload.totalSize);
+            server.send(303, "text/plain", "Uploaded.");
+        } else {
+            server.send(400, "text/plain", "Upload failed.");
+        }
+    }
+}
+
 
 void serverRouting() {
     server.on("/", HTTP_GET, []() {
         server.send(200, "text/html", "POST: /plot /zoomfactor /wlan");
     });
     server.on("/plot", HTTP_POST, postPlot);
+    server.on("/plot", HTTP_GET, getPlot);
     server.on("/zoomfactor", HTTP_POST, postZoomFactor);
     server.on("/wlan", HTTP_POST, postWlanSettings);
+    server.on("/upload", HTTP_POST, postFileUpload);
 }
 
 bool getPoint(int line, int point, float *x, float* y)
@@ -335,9 +364,11 @@ void setup()
 
     initMotors();
     initServer();
-    Serial.println(initPlot(plotData));
+    server.begin();
+    serverRouting();
 
-    delay(5000);
+    initPlot(plotData);
+    delay(4000);
 }
 
 void loop() {
