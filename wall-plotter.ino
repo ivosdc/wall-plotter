@@ -168,7 +168,6 @@ void initFileSystem() {
     } else {
         f.readStringUntil('\n').toCharArray(configFile, 1000);
         f.close();
-        Serial.println();        
         if (strlen(configFile) == 0) {
             Serial.println("writing config.json");
             writeConfig();
@@ -274,12 +273,14 @@ void postFileUpload(){
     }
 }
 
+void postPlotStop() {printing = false;}
 
 void serverRouting() {
     server.on("/", HTTP_GET, []() {
         server.send(200, "text/html", "POST: /plot /zoomfactor /wlan");
     });
     server.on("/plot", HTTP_POST, postPlot);
+    server.on("/plot/stop", HTTP_POST, postPlotStop);
     server.on("/plot", HTTP_GET, getPlot);
     server.on("/zoomfactor", HTTP_POST, postZoomFactor);
     server.on("/wlan", HTTP_POST, postWlanSettings);
@@ -377,9 +378,19 @@ void loop() {
     server.handleClient();
     if (printing) {
         for (int line = 0; line < plotJson["lines"].size(); line++) {
+            if (!printing) {
+                Serial.println("Plot stopped.");
+                goHome();
+                break;
+            }
             for (int point = 0; point < plotJson["lines"][line]["points"].size(); point++) {
                 float tmpX = 0;
                 float tmpY = 0;
+                server.handleClient();
+                if (!printing) {
+                    servoPen.write(PEN_UP);
+                    break;
+                }
                 if(!getPoint(line, point, &tmpX, &tmpY)) {
                     servoPen.write(PEN_UP);
                     Serial.println("Plot error.");
