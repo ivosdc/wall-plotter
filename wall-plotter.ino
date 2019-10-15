@@ -380,7 +380,6 @@ void loop() {
         for (int line = 0; line < plotJson["lines"].size(); line++) {
             if (!printing) {
                 Serial.println("Plot stopped.");
-                goHome();
                 break;
             }
             for (int point = 0; point < plotJson["lines"][line]["points"].size(); point++) {
@@ -395,7 +394,6 @@ void loop() {
                     servoPen.write(PEN_UP);
                     Serial.println("Plot error.");
                     printing = false;
-                    goHome();
                     break;
                 } else {
                     if (point == 0) {
