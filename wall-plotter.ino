@@ -35,8 +35,8 @@ ESP8266WebServer server(80);
 IPAddress accessPointIP(192, 168, 0, 1);  
 IPAddress netMask(255, 255, 255, 0);
 DNSServer dnsServer;
-StaticJsonDocument<10000> plotJson;
-StaticJsonDocument<500> configJson;
+StaticJsonDocument<20000> plotJson;
+StaticJsonDocument<1000> configJson;
 bool printing = true;
 long canvasWidth = 1000;
 long currentLeft = canvasWidth;
@@ -106,20 +106,23 @@ void initConfig() {
 }
 
 bool setConfig() {
-    if (DeserializationError error = deserializeJson(configJson, configData)) {
+    StaticJsonDocument<1000> newConfigJson;
+    char newConfigData[strlen(configData)];
+    memcpy(newConfigData,configData, strlen(configData) + 1);
+    if (DeserializationError error = deserializeJson(newConfigJson, newConfigData)) {
         Serial.println("error parsing json");       
         return false;
     }
-    Serial.println(configData);
-    ssid = configJson["server"]["ssid"];
-    password = configJson["server"]["password"];
-    canvasWidth = configJson["plotter"]["canvasWidth"];
-    currentLeft = configJson["plotter"]["currentLeft"];
-    currentRight = configJson["plotter"]["currentRight"];
-    centerX = configJson["plotter"]["centerX"];
-    centerY = configJson["plotter"]["centerY"];
-    zoomFactor = configJson["plotter"]["zoomFactor"];
+    ssid = newConfigJson["server"]["ssid"];
+    password = newConfigJson["server"]["password"];
+    canvasWidth = newConfigJson["plotter"]["canvasWidth"];
+    currentLeft = newConfigJson["plotter"]["currentLeft"];
+    currentRight = newConfigJson["plotter"]["currentRight"];
+    centerX = newConfigJson["plotter"]["centerX"];
+    centerY = newConfigJson["plotter"]["centerY"];
+    zoomFactor = newConfigJson["plotter"]["zoomFactor"];
     zoom = getZoom(zoomFactor);
+    initConfig();
     
     return true;
 }
@@ -171,22 +174,19 @@ void initFileSystem() {
             writeConfig();
         } else {
             Serial.println("config.json found:");
-            memcpy(configData,configFile, strlen(configFile) + 2);
+            memcpy(configData,configFile, strlen(configFile) + 1);
             setConfig();
         }
     }
 }
 
 void writeConfig() {
-    SPIFFS.remove("/config.json");
     initConfig();
     File f = SPIFFS.open("/config.json", "w");
     int bytesWritten = f.println(configData);
     f.close();
     if (bytesWritten > 0) {
         Serial.println("Config written");
-        Serial.println(bytesWritten);
-     
     } else {
         Serial.println("Config write failed");
     }
