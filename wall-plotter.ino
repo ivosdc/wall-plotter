@@ -8,7 +8,7 @@
 
 #define SERVO_PIN D9
 #define WIFI_INIT_RETRY 20
-#define PEN_UP 30
+#define PEN_UP 50
 #define PEN_DOWN 70
 #define SPOOL_CIRC 94.2 
 #define STEPS_PER_ROTATION 4075.7728395
@@ -225,13 +225,13 @@ void postPlotStart() {
                     } else {
                         servoPen.write(PEN_DOWN);
                     }
+                    yield();
                     long distanceLeft = 0;
                     long distanceRight = 0;
                     homeX = homeX + x;
                     homeY = homeY + y;
                     getDistance(x,y, &distanceLeft, &distanceRight);
                     drawLine(distanceLeft, distanceRight);
-                    yield();
                     server.handleClient();
                     printf ("X: %s\n",pch);
                     x = atof(pch);
