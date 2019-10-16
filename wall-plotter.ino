@@ -206,9 +206,6 @@ void postPlotStart() {
                 break;
             }
             f.readStringUntil('\n').toCharArray(newPlotData, 2000);
-            if (point > 0) {
-                servoPen.write(PEN_DOWN);
-            }
             char * pch;
             pch = strtok (newPlotData,",");
             int counter = 0;
@@ -217,22 +214,24 @@ void postPlotStart() {
                 Serial.println("PEN_UP:");
                 point = 0;
             }
-            if (point == 2) {
-                servoPen.write(PEN_DOWN);
-                Serial.println("PEN_DOWN:");
-            }
             while (pch != NULL && point > 0 && printing) {
                 if (!printing) {
                     servoPen.write(PEN_UP);
                     break;
                 }
                 if (counter % 2 == 0) {
+                    if (point < 3) {
+                        servoPen.write(PEN_UP);
+                    } else {
+                        servoPen.write(PEN_DOWN);
+                    }
                     long distanceLeft = 0;
                     long distanceRight = 0;
                     homeX = homeX + x;
                     homeY = homeY + y;
                     getDistance(x,y, &distanceLeft, &distanceRight);
                     drawLine(distanceLeft, distanceRight);
+                    yield();
                     server.handleClient();
                     printf ("X: %s\n",pch);
                     x = atof(pch);
