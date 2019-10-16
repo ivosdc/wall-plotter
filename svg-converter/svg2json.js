@@ -56,6 +56,7 @@ lines.forEach( line => {
 
 //collect small values and add them to a valid "point"-value
 var filteredPlotData = {lines: []};
+var plotDataString = "";
 var smallPoint = {x: 0,y: 0};
 wallPlotterJson.lines.forEach(line => {
     var points = {points: []};
@@ -87,8 +88,17 @@ wallPlotterJson.lines.forEach(line => {
 });
 wallPlotterJson = filteredPlotData;
 
-fs.writeFile('wall-plotter.json', JSON.stringify(wallPlotterJson), 'utf8', f => {
-    console.log(JSON.stringify(wallPlotterJson));
+// data
+var data = "";
+wallPlotterJson.lines.forEach(line => {
+    data += "m\n";
+    line.points.forEach(point => {
+        data += point.x + "," + point.y + "\n";
+    });
+});
+
+fs.writeFile('wall-plotter.data', data, 'utf8', f => {
+    console.log(data);
 });
 
 // back to svg

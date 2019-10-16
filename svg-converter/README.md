@@ -5,7 +5,7 @@
 
 # about this tool
 *This Version:*
-extracts the first svg:path the :d information and converts *"M x y"* (SVGs/G-code uppercase M paramater) to the wall-plotter json format:
+extracts the first svg:path the :d information and converts *"M x y"* (SVGs/G-code uppercase M paramater) to the wall-plotter.data format:
 ```
 <svg xmlns="http://www.w3.org/2000/svg"
      width="8.88889in" height="5.55556in"
@@ -18,21 +18,21 @@ extracts the first svg:path the :d information and converts *"M x y"* (SVGs/G-co
 </svg>
 ```
 ``` 
-{lines: [
-    {points: [
-        {x: 158.21149, y:280.34488},
-        {x:3.94531,y:0},
-        {x:0,y:11.95312},
-        {x:-3.94531,y:0},
-        {x:0,y:-29.16016}]},
-     {points: [
-        {x:212.74274, y:279.11441},
-        {x:3.59375,y:0},{x:0,y:30.39063},
-        {x:-3.94531,y:0},
-        {x:0,y:-29.16016}
-        ]
-    }
-]}";
+m
+-9.55,16.24
+-7.00,-1.00
+7.00,1.00
+m
+43.00,0.00
+-14.00,-1.00
+14.00,1.00
+m
+-56.00,1.00
+-10.00,-1.00
+10.00,1.00
+m
+53.00,0.96
+11.00,-0.96
 ```
 Every section "M" of a svg/xml-path section will be converted into a `points-array` with `X` and `Y` coords.
 By the way, the wall-plotter json format corresponds to the svg/G-code *small "m"* parameter.
@@ -49,7 +49,7 @@ L, l, H, h, V, v and  m have to be done... Contributers welcome ;)
 ```
 > node svg2json.js example.svg
 ```
-The json-output will be stored as `wall-plotter.json`.
+The data-output will be stored as `wall-plotter.data`.
 
 
 # how to create a "working" SVG
@@ -65,4 +65,4 @@ The parser crawls and splits "M" parts in the path.
 
 ***thats all***
 
-These SVG-files can easily be converted to wall-plotter.json!
+These SVG-files can easily be converted to wall-plotter.data!

@@ -36,7 +36,6 @@ ESP8266WebServer server(80);
 IPAddress accessPointIP(192, 168, 0, 1);  
 IPAddress netMask(255, 255, 255, 0);
 DNSServer dnsServer;
-StaticJsonDocument<20000> plotJson;
 StaticJsonDocument<1000> configJson;
 bool printing = true;
 long canvasWidth = 1000;
@@ -48,13 +47,10 @@ static float lastX = 0;
 static float lastY = 0;
 static float homeX = 0;
 static float homeY = 0;
-
 char configData[] = "{\"server\":{\"ssid\":\"ssid\",\"password\":\"password\"},\"plotter\":{\"canvasWidth\":\"canvasWidth\",\"currentLeft\":\"currentLeft\",\"currentRight\":\"currentRight\",\"centerX\":\"centerX\",\"centerY\":\"centerY\",\"zoomFactor\":\"zoomFactor\"}}";
 
-char plotData[] = "{\"lines\":[{\"points\":[{\"x\":\"243.98\",\"y\":\"102.51\"},{\"x\":\"6.00\",\"y\":\"-2.00\"},{\"x\":\"5.80\",\"y\":\"-7.39\"},{\"x\":\"-4.52\",\"y\":\"-7.10\"},{\"x\":\"-8.77\",\"y\":\"-3.81\"},{\"x\":\"-26.60\",\"y\":\"-8.78\"},{\"x\":\"-3.10\",\"y\":\"-22.43\"},{\"x\":\"4.09\",\"y\":\"-10.17\"},{\"x\":\"16.57\",\"y\":\"-6.44\"},{\"x\":\"12.55\",\"y\":\"2.22\"},{\"x\":\"2.81\",\"y\":\"0.50\"},{\"x\":\"7.51\",\"y\":\"1.21\"},{\"x\":\"1.66\",\"y\":\"2.24\"},{\"x\":\"1.38\",\"y\":\"1.87\"},{\"x\":\"-0.36\",\"y\":\"5.19\"},{\"x\":\"0.00\",\"y\":\"2.38\"},{\"x\":\"-8.59\",\"y\":\"-3.64\"},{\"x\":\"-10.00\",\"y\":\"-4.57\"},{\"x\":\"-9.41\",\"y\":\"3.47\"},{\"x\":\"-6.16\",\"y\":\"2.27\"},{\"x\":\"-5.21\",\"y\":\"7.11\"},{\"x\":\"4.11\",\"y\":\"6.32\"},{\"x\":\"7.34\",\"y\":\"9.28\"},{\"x\":\"23.81\",\"y\":\"4.64\"},{\"x\":\"6.55\",\"y\":\"7.12\"},{\"x\":\"0.95\",\"y\":\"2.49\"},{\"x\":\"-0.87\",\"y\":\"14.51\"},{\"x\":\"-6.63\",\"y\":\"10.76\"},{\"x\":\"-17.36\",\"y\":\"3.77\"},{\"x\":\"-12.53\",\"y\":\"-0.53\"},{\"x\":\"-3.06\",\"y\":\"-2.62\"},{\"x\":\"-7.11\",\"y\":\"-1.31\"},{\"x\":\"-1.81\",\"y\":\"-2.58\"},{\"x\":\"-1.38\",\"y\":\"-1.96\"},{\"x\":\"0.36\",\"y\":\"-5.08\"},{\"x\":\"0.00\",\"y\":\"-2.45\"},{\"x\":\"10.03\",\"y\":\"4.31\"},{\"x\":\"9.75\",\"y\":\"5.12\"},{\"x\":\"11.22\",\"y\":\"-3.65\"}]},{\"points\":[{\"x\":\"-193.00\",\"y\":\"-64.78\"},{\"x\":\"9.32\",\"y\":\"26.00\"},{\"x\":\"13.68\",\"y\":\"35.00\"},{\"x\":\"15.32\",\"y\":\"-42.00\"},{\"x\":\"1.23\",\"y\":\"-3.32\"},{\"x\":\"4.13\",\"y\":\"-12.19\"},{\"x\":\"2.02\",\"y\":\"-1.89\"},{\"x\":\"2.27\",\"y\":\"-2.14\"},{\"x\":\"5.03\",\"y\":\"0.54\"},{\"x\":\"3.00\",\"y\":\"0.00\"},{\"x\":\"-21.19\",\"y\":\"56.00\"},{\"x\":\"-2.08\",\"y\":\"5.47\"},{\"x\":\"-1.94\",\"y\":\"10.91\"},{\"x\":\"-6.81\",\"y\":\"0.56\"},{\"x\":\"-9.13\",\"y\":\"0.76\"},{\"x\":\"0.56\",\"y\":\"-4.58\"},{\"x\":\"-4.81\",\"y\":\"-12.12\"},{\"x\":\"-21.60\",\"y\":\"-57.00\"},{\"x\":\"11.00\",\"y\":\"0.00\"}]},{\"points\":[{\"x\":\"70.37\",\"y\":\"0.13\"},{\"x\":\"-0.90\",\"y\":\"1.25\"},{\"x\":\"3.40\",\"y\":\"13.62\"},{\"x\":\"2.52\",\"y\":\"10.08\"},{\"x\":\"5.33\",\"y\":\"27.45\"},{\"x\":\"4.28\",\"y\":\"7.47\"},{\"x\":\"14.00\",\"y\":\"-60.00\"},{\"x\":\"12.00\",\"y\":\"0.00\"},{\"x\":\"7.63\",\"y\":\"32.00\"},{\"x\":\"7.37\",\"y\":\"29.00\"},{\"x\":\"10.13\",\"y\":\"-42.00\"},{\"x\":\"0.77\",\"y\":\"-3.09\"},{\"x\":\"2.71\",\"y\":\"-12.56\"},{\"x\":\"1.53\",\"y\":\"-1.78\"},{\"x\":\"1.86\",\"y\":\"-2.17\"},{\"x\":\"5.31\",\"y\":\"0.60\"},{\"x\":\"2.69\",\"y\":\"0.00\"},{\"x\":\"-18.00\",\"y\":\"73.00\"},{\"x\":\"-13.00\",\"y\":\"0.00\"},{\"x\":\"-14.00\",\"y\":\"-61.00\"},{\"x\":\"-2.00\",\"y\":\"0.00\"},{\"x\":\"-14.00\",\"y\":\"61.00\"},{\"x\":\"-13.00\",\"y\":\"0.00\"},{\"x\":\"-18.00\",\"y\":\"-73.00\"},{\"x\":\"4.00\",\"y\":\"0.00\"}]}]}";
-
-const char Header[] PROGMEM = "HTTP/1.1 303 OK\r\nLocation:/plot\r\nCache-Control: no-cache\r\n";
-const char Helper[] PROGMEM = R"(<form method="POST" action="/upload" enctype="multipart/form-data">
+const char HeaderUploadPlot[] PROGMEM = "HTTP/1.1 303 OK\r\nLocation:/plot\r\nCache-Control: no-cache\r\n";
+const char UploadPlot[] PROGMEM = R"(<form method="POST" action="/plot" enctype="multipart/form-data">
      <input type="file" name="/wall-plotter.data"><input type="submit" value="Upload"></form>Upload a wall-plott.data)";
 
 void initDNS() {
@@ -160,9 +156,8 @@ void initMotors() {
 
 void initFileSystem() {
     char configFile[1000];
-    configFile[0] = 0; // init configFile
+    configFile[0] = 0;
     SPIFFS.begin();
-    // check if valid config.json exist else create one
     File f = SPIFFS.open("/config.json", "r");
     if (!f) {
         Serial.println("read file failed");
@@ -196,14 +191,68 @@ void writeConfig() {
     }
 }
 
-void readPlot() {
-    File f = SPIFFS.open(UPLOAD_PLOT_FILENAME, "r");
-    char newPlotData[20000];
-    f.readStringUntil('\n').toCharArray(newPlotData, 20000);
-    memcpy(plotData,newPlotData, strlen(newPlotData) + 1);
-    Serial.print("PlotData: ");
-    Serial.println(newPlotData);
-    Serial.println(plotData);
+void postPlotStart() {
+    printing = true;
+    if (SPIFFS.exists(UPLOAD_PLOT_FILENAME)) {
+        server.send(200);
+        char newPlotData[2000];
+        File f = SPIFFS.open(UPLOAD_PLOT_FILENAME, "r");
+        int point = 0;
+        float x = 0;
+        float y = 0;
+        while(f.available()) {
+            if (!printing) {
+                Serial.println("Plot stopped.");
+                break;
+            }
+            f.readStringUntil('\n').toCharArray(newPlotData, 2000);
+            if (point > 0) {
+                servoPen.write(PEN_DOWN);
+            }
+            char * pch;
+            pch = strtok (newPlotData,",");
+            int counter = 0;
+            if (String(pch).indexOf("m") != -1) {
+                servoPen.write(PEN_UP);
+                Serial.println("PEN_UP:");
+                point = 0;
+            }
+            if (point == 2) {
+                servoPen.write(PEN_DOWN);
+                Serial.println("PEN_DOWN:");
+            }
+            while (pch != NULL && point > 0 && printing) {
+                if (!printing) {
+                    servoPen.write(PEN_UP);
+                    break;
+                }
+                if (counter % 2 == 0) {
+                    long distanceLeft = 0;
+                    long distanceRight = 0;
+                    homeX = homeX + x;
+                    homeY = homeY + y;
+                    getDistance(x,y, &distanceLeft, &distanceRight);
+                    drawLine(distanceLeft, distanceRight);
+                    server.handleClient();
+                    printf ("X: %s\n",pch);
+                    x = atof(pch);
+                } else {
+                    printf ("Y: %s\n",pch);
+                    y = atof(pch);
+                }
+                pch = strtok (NULL, ",");
+                counter++;
+            }
+            point++;
+        }
+        f.close();
+        servoPen.write(PEN_UP);
+        Serial.println("Plot done.");
+        printing = false;
+        goHome();
+    } else {
+       server.send(404, "text/plain", "NotFound");
+    }
 }
 
 void getPlot() {
@@ -214,24 +263,6 @@ void getPlot() {
     } else {
       server.send(404, "text/plain", "NotFound");
     }
-}
-
-bool initPlot(String json) {
-    Serial.println("Start plotting...");
-    if (DeserializationError error = deserializeJson(plotJson, json)) {
-        Serial.println("error parsing json");
-        server.send(400);
-        return false;
-    }
-    printing = true;
-    server.send(201, "text/plain", "plot starting");
-
-    return true;
-}
-
-void postPlot() {
-    String body = server.arg("plain");
-    initPlot(body);
 }
 
 bool postZoomFactor() {
@@ -280,7 +311,7 @@ void postFileUpload(){
         if (fsUploadFile)
             fsUploadFile.close();
         printf("Upload Size: %u\n", upload.totalSize);
-        server.sendContent(Header);
+        server.sendContent(HeaderUploadPlot);
     }
 }
 
@@ -290,36 +321,23 @@ void postPlotStop() {
 }
 
 void getUpload() {
-    server.send(200, "text/html", Helper);
+    server.send(200, "text/html", UploadPlot);
 }
+
+void getRoot() {
+    server.send(200, "text/plain", "IP: " + WiFi.localIP().toString() + " Wall-plotter AP:" + WiFi.softAPIP().toString());
+}
+
 
 void serverRouting() {
-    server.on("/", HTTP_GET, []() {
-        server.send(200, "text/html", "POST: /plot /zoomfactor /wlan");
-    });
-    server.on("/plot", HTTP_POST, postPlot);
-    server.on("/plot/stop", HTTP_POST, postPlotStop);
+    server.on("/", HTTP_GET, getRoot);
+    server.on("/plot", HTTP_POST, []() {}, postFileUpload);
     server.on("/plot", HTTP_GET, getPlot);
+    server.on("/plot/stop", HTTP_POST, postPlotStop);
+    server.on("/plot/start", HTTP_POST, postPlotStart);
     server.on("/zoomfactor", HTTP_POST, postZoomFactor);
     server.on("/wlan", HTTP_POST, postWlanSettings);
-    server.on("/upload", HTTP_POST, []() {}, postFileUpload);
     server.on("/upload", HTTP_GET, getUpload);
-}
-
-bool getPoint(int line, int point, float *x, float* y)
-{
-    float newX = plotJson["lines"][line]["points"][point]["x"];
-    float newY = plotJson["lines"][line]["points"][point]["y"];
-    if (plotJson["lines"][line]["points"][point]["x"] == nullptr && plotJson["lines"][line]["points"][point]["y"] == nullptr) {
-
-        return false;
-    }
-    *x = newX;
-    *y = newY;
-    homeX = homeX + newX;
-    homeY = homeY + newY;
-
-    return true;
 }
 
 void drawLine(long distanceLeft, long distanceRight){
@@ -388,49 +406,10 @@ void setup()
     initServer();
     server.begin();
     serverRouting();
-
-    initPlot(plotData);
-    delay(4000);
+    Serial.println("Ready!");
 }
 
 void loop() {
     server.handleClient();
-    if (printing) {
-        for (int line = 0; line < plotJson["lines"].size(); line++) {
-            if (!printing) {
-                Serial.println("Plot stopped.");
-                break;
-            }
-            for (int point = 0; point < plotJson["lines"][line]["points"].size(); point++) {
-                float tmpX = 0;
-                float tmpY = 0;
-                server.handleClient();
-                if (!printing) {
-                    servoPen.write(PEN_UP);
-                    break;
-                }
-                if(!getPoint(line, point, &tmpX, &tmpY)) {
-                    servoPen.write(PEN_UP);
-                    Serial.println("Plot error.");
-                    printing = false;
-                    break;
-                } else {
-                    if (point == 0) {
-                        servoPen.write(PEN_UP);
-                    } else {
-                        servoPen.write(PEN_DOWN);
-                    }
-                    long distanceLeft = 0;
-                    long distanceRight = 0;
-                    getDistance(tmpX,tmpY, &distanceLeft, &distanceRight);
-                    drawLine(distanceLeft, distanceRight);
-                }
-            }
-        }
-        servoPen.write(PEN_UP);
-        Serial.println("Plot done.");
-        printing = false;
-        goHome();
-    }
 }
 
