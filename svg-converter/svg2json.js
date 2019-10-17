@@ -53,7 +53,6 @@ lines.forEach( line => {
     wallPlotterJson.lines.push(points);
 })
 
-
 //collect small values and add them to a valid "point"-value
 var filteredPlotData = {lines: []};
 var plotDataString = "";

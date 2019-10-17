@@ -18,11 +18,6 @@
 
 float zoomFactor = 1;
 
-float getZoom(float zoomFactor) {
-    return (zoomFactor / STEPS_PER_TICK) * STEPS_PER_MM;
-}
-
-float zoom = getZoom(zoomFactor);
 StepperMotor motorLeft(D5, D6, D7, D8); // IN1, IN2, IN3, IN4
 StepperMotor motorRight(D1,D2,D3,D4);
 const int motorLeftDirection = -1;
@@ -102,7 +97,6 @@ void initConfig() {
     configJson["plotter"]["centerX"] = centerX;
     configJson["plotter"]["centerY"] = centerY;
     configJson["plotter"]["zoomFactor"] = zoomFactor;
-    zoom = getZoom(zoomFactor);
     serializeJson(configJson, configData);
 }
 
@@ -122,7 +116,6 @@ bool setConfig() {
     centerX = newConfigJson["plotter"]["centerX"];
     centerY = newConfigJson["plotter"]["centerY"];
     zoomFactor = newConfigJson["plotter"]["zoomFactor"];
-    zoom = getZoom(zoomFactor);
     initConfig();
     
     return true;
@@ -154,6 +147,18 @@ void initMotors() {
     servoPen.write(PEN_UP);
 }
 
+void writeConfig() {
+    initConfig();
+    File f = SPIFFS.open("/config.json", "w");
+    int bytesWritten = f.println(configData);
+    f.close();
+    if (bytesWritten > 0) {
+        Serial.println("Config written");
+    } else {
+        Serial.println("Config write failed");
+    }
+}
+
 void initFileSystem() {
     char configFile[1000];
     configFile[0] = 0;
@@ -179,16 +184,78 @@ void initFileSystem() {
     }
 }
 
-void writeConfig() {
-    initConfig();
-    File f = SPIFFS.open("/config.json", "w");
-    int bytesWritten = f.println(configData);
-    f.close();
-    if (bytesWritten > 0) {
-        Serial.println("Config written");
-    } else {
-        Serial.println("Config write failed");
+
+void drawLine(long distanceLeft, long distanceRight){
+    int directionLeft = motorLeftDirection;
+    int directionRight = motorRightDirection;
+    int tmpDirection = 0;
+    long distL = distanceLeft;
+    long distR = distanceRight;
+    if (distanceLeft < 0) {
+        directionLeft = directionLeft * -1;
+        distL = distL * -1;
     }
+    if (distanceRight < 0) {
+        directionRight = directionRight * -1;
+        distR = distR * -1;
+    }
+    long ticks = distL * distR;
+    if (distL == 0) {
+        ticks = distR * distR;
+        distL = distR;
+        distR = 0;
+    } else if (distR == 0) {
+        ticks = distL * distL;
+        distR = distL;
+        distL = 0;
+    }
+    Serial.print(distanceLeft);
+    Serial.print(" dist ");
+    Serial.println(distanceRight);
+    int countLeft = 0;
+    int countRight = 0;
+    for (long i = 0; i < ticks; i++) {
+        if (distL != 0 && i % distL == 0) {
+            countLeft = countLeft + (1 * directionRight);
+            motorLeft.step(STEPS_PER_TICK * directionRight);
+        }
+        if (distR != 0 && i % distR == 0) {
+            countRight = countRight + (1 * directionLeft);
+            motorRight.step(STEPS_PER_TICK * directionLeft);
+        }
+        yield();
+    }
+    Serial.print(countRight * motorLeftDirection);
+    Serial.print(" count ");
+    Serial.println(countLeft * motorRightDirection);
+    
+}
+
+void getDistance(float x, float y, long *distanceLeft, long *distanceRight) {
+    float nextX = x + lastX;
+    float nextY = y + lastY;
+    float leftX = nextX + centerX;
+    float rightX = nextX - centerX;
+    float yPos  = nextY + centerY;
+    long newLeft  = sqrt(pow(leftX, 2) + pow(yPos, 2));
+    long newRight = sqrt(pow(rightX, 2) + pow(yPos, 2));
+    *distanceLeft  = (newLeft - currentLeft) * zoomFactor;
+    *distanceRight = (newRight - currentRight) * zoomFactor;
+    currentLeft = newLeft;
+    currentRight = newRight;
+    lastX = nextX;
+    lastY = nextY;
+}
+
+void goHome() {
+    long distanceLeft = 0;
+    long distanceRight = 0;
+    homeX = homeX * -1;
+    homeY = homeY * -1;
+    getDistance(homeX,homeY, &distanceLeft, &distanceRight);
+    drawLine(distanceLeft, distanceRight);
+    homeX = 0;
+    homeY = 0;
 }
 
 void postPlotStart() {
@@ -214,7 +281,7 @@ void postPlotStart() {
                 Serial.println("PEN_UP:");
                 point = 0;
             }
-            while (pch != NULL && point > 0 && printing) {
+            while (pch != NULL && point > 0) {
                 if (!printing) {
                     servoPen.write(PEN_UP);
                     break;
@@ -233,10 +300,10 @@ void postPlotStart() {
                     getDistance(x,y, &distanceLeft, &distanceRight);
                     drawLine(distanceLeft, distanceRight);
                     server.handleClient();
-                    printf ("X: %s\n",pch);
+                    //printf ("X: %s\n",pch);
                     x = atof(pch);
                 } else {
-                    printf ("Y: %s\n",pch);
+                    //printf ("Y: %s\n",pch);
                     y = atof(pch);
                 }
                 pch = strtok (NULL, ",");
@@ -337,58 +404,6 @@ void serverRouting() {
     server.on("/zoomfactor", HTTP_POST, postZoomFactor);
     server.on("/wlan", HTTP_POST, postWlanSettings);
     server.on("/upload", HTTP_GET, getUpload);
-}
-
-void drawLine(long distanceLeft, long distanceRight){
-    int directionLeft = motorLeftDirection;
-    int directionRight = motorRightDirection;
-    long distL = distanceLeft;
-    long distR = distanceRight;
-    if (distanceLeft < 0) {
-        directionLeft = directionLeft * -1;
-        distL = distL * -1;
-    }
-    if (distanceRight < 0) {
-        directionRight = directionRight * -1;
-        distR = distR * -1;
-    }
-    long ticks = distL * distR;
-    for (long i = 1; i <= ticks * zoom; i++) {
-        if (i % distL == 0) {
-            motorLeft.step(STEPS_PER_TICK * directionRight);
-        }
-        if (i % distR == 0) {
-            motorRight.step(STEPS_PER_TICK * directionLeft);
-        }
-        yield();
-    }
-}
-
-void getDistance(float x, float y, long *distanceLeft, long *distanceRight) {
-    float nextX = x + lastX;
-    float nextY = y + lastY;
-    float leftX = nextX + centerX;
-    float rightX = nextX - centerX;
-    float yPos  = nextY + centerY;
-    long newLeft  = sqrt(pow(leftX, 2) + pow(yPos, 2));
-    long newRight = sqrt(pow(rightX, 2) + pow(yPos, 2));
-    *distanceLeft  = (newLeft - currentLeft) * STEPS_PER_MM;
-    *distanceRight = (newRight - currentRight) * STEPS_PER_MM;
-    currentLeft = newLeft;
-    currentRight = newRight;
-    lastX = nextX;
-    lastY = nextY;
-}
-
-void goHome() {
-    long distanceLeft = 0;
-    long distanceRight = 0;
-    homeX = homeX * -1;
-    homeY = homeY * -1;
-    getDistance(homeX,homeY, &distanceLeft, &distanceRight);
-    drawLine(distanceLeft, distanceRight);
-    homeX = 0;
-    homeY = 0;
 }
 
 void setup()
