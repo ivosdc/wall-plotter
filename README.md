@@ -35,6 +35,7 @@ My needs were to use a Node-MCU board instead of a *poor* Arduino. In the ongoin
 ### Set configuration parameter
 - Change the output size. POST ``` {"zoomFactor":"1"} ``` to `/zoom`. 1 (no zoom) is default. 
  *You need a rest-api plugin for your browser or a tool like postman!*
+- Set canvas width and the position of the wall-plotter. POST ```{"canvasWidth":"1000","currentLeft":"330","currentRight":"999","zoomFactor":"1"}``` to `/config`.
  
 ### Used libraries:
 - https://github.com/rydepier/Arduino-and-ULN2003-Stepper-Motor-Driver

@@ -16,8 +16,6 @@
 #define STEPS_PER_MM  (STEPS_PER_ROTATION / SPOOL_CIRC) / STEPS_PER_TICK
 #define UPLOAD_PLOT_FILENAME "/wall-plotter.data"
 
-float zoomFactor = 1;
-
 StepperMotor motorLeft(D5, D6, D7, D8); // IN1, IN2, IN3, IN4
 StepperMotor motorRight(D1,D2,D3,D4);
 const int motorLeftDirection = -1;
@@ -37,12 +35,13 @@ long canvasWidth = 1000;
 long currentLeft = canvasWidth;
 long currentRight = canvasWidth;
 float centerX = canvasWidth / 2;
-float centerY = 866; //the height in the triangle
+float centerY = sqrt(pow(canvasWidth, 2) - pow(centerX, 2));
+float zoomFactor = 1;
 static float lastX = 0;
 static float lastY = 0;
 static float homeX = 0;
 static float homeY = 0;
-char configData[] = "{\"server\":{\"ssid\":\"ssid\",\"password\":\"password\"},\"plotter\":{\"canvasWidth\":\"canvasWidth\",\"currentLeft\":\"currentLeft\",\"currentRight\":\"currentRight\",\"centerX\":\"centerX\",\"centerY\":\"centerY\",\"zoomFactor\":\"zoomFactor\"}}";
+char configData[] = "{\"server\":{\"ssid\":\"ssid\",\"password\":\"password\"},\"plotter\":{\"canvasWidth\":\"canvasWidth\",\"currentLeft\":\"currentLeft\",\"currentRight\":\"currentRight\",\"zoomFactor\":\"zoomFactor\"}}";
 
 const char HeaderUploadPlot[] PROGMEM = "HTTP/1.1 303 OK\r\nLocation:/plot\r\nCache-Control: no-cache\r\n";
 const char UploadPlot[] PROGMEM = R"(<form method="POST" action="/plot" enctype="multipart/form-data">
@@ -98,6 +97,7 @@ void initConfig() {
     configJson["plotter"]["centerY"] = centerY;
     configJson["plotter"]["zoomFactor"] = zoomFactor;
     serializeJson(configJson, configData);
+    Serial.println(configData);
 }
 
 bool setConfig() {
@@ -363,6 +363,29 @@ bool postWlanSettings() {
     return true;
 }
 
+bool postPlotterConfig() {
+    Serial.println("postPlotterConfig");
+    StaticJsonDocument<500> plotterConfigJson;
+    String body = server.arg("plain");
+    Serial.println(body);
+    if (DeserializationError error = deserializeJson(plotterConfigJson, body)) {
+        Serial.println("error parsing json");
+        server.send(400);
+        return false;
+    }
+    canvasWidth = plotterConfigJson["canvasWidth"];
+    currentLeft = plotterConfigJson["currentLeft"];
+    currentRight = plotterConfigJson["currentRight"];
+    zoomFactor = plotterConfigJson["zoomFactor"];
+    centerX = canvasWidth / 2;
+    centerY = sqrt(pow(canvasWidth, 2) - pow(centerX, 2));
+    writeConfig();
+    server.send(201, "application/json", configJson["plotter"]);
+
+    return true;
+}
+
+
 void postFileUpload(){
     Serial.println("Upload.");
     static File fsUploadFile;
@@ -390,8 +413,9 @@ void getUpload() {
     server.send(200, "text/html", UploadPlot);
 }
 
+
 void getRoot() {
-    server.send(200, "text/plain", "IP: " + WiFi.localIP().toString() + " Wall-plotter AP:" + WiFi.softAPIP().toString());
+    server.send(200, "text/html", configJson["plotter"]);
 }
 
 
@@ -404,6 +428,7 @@ void serverRouting() {
     server.on("/zoomfactor", HTTP_POST, postZoomFactor);
     server.on("/wlan", HTTP_POST, postWlanSettings);
     server.on("/upload", HTTP_GET, getUpload);
+    server.on("/config", HTTP_POST, postPlotterConfig);
 }
 
 void setup()
