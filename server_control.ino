@@ -97,7 +97,7 @@ bool postWlanSettings() {
     password = wlanJson["password"];
     server.send(201, "text/plain", "wlan:" + String(ssid));
     writeConfig();
-    // initServer();
+    initServer();
 
     return true;
 }
