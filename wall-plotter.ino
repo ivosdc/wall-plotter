@@ -9,9 +9,7 @@
 #include "Config.h"
 
 ESP8266WebServer server(80);
-IPAddress accessPointIP(192, 168, 0, 1);
-IPAddress netMask(255, 255, 255, 0);
-DNSServer dnsServer;
+
 
 StepperMotor motorLeft(MOTOR_LEFT_1, MOTOR_LEFT_2, MOTOR_LEFT_3, MOTOR_LEFT_4);
 StepperMotor motorRight(MOTOR_RIGHT_1, MOTOR_RIGHT_2, MOTOR_RIGHT_3, MOTOR_RIGHT_4);

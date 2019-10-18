@@ -1,5 +1,10 @@
 #include "Config.h"
 
+IPAddress accessPointIP(192, 168, 0, 1);
+IPAddress netMask(255, 255, 255, 0);
+DNSServer dnsServer;
+
+
 const char HeaderUploadPlot[] PROGMEM = "HTTP/1.1 303 OK\r\nLocation:/plot\r\nCache-Control: no-cache\r\n";
 const char UploadPlot[] PROGMEM = R"(<form method="POST" action="/plot" enctype="multipart/form-data">
      <input type="file" name="/wall-plotter.data"><input type="submit" value="Upload"></form>Upload a wall-plott.data)";
