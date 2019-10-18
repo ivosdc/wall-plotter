@@ -42,6 +42,7 @@ const char UploadPlot[] PROGMEM = R"(<form method="POST" action="/plot" enctype=
 
 void writeConfig();
 
+
 void setup() {
     Serial.begin(9600);
     Serial.println("Setup");
@@ -63,6 +64,7 @@ void setup() {
 void loop() {
     server.handleClient();
 }
+
 
 
 void drawLine(long distanceLeft, long distanceRight){
@@ -201,101 +203,5 @@ void postPlotStart() {
     }
 }
 
-void getPlot() {
-    if (SPIFFS.exists(UPLOAD_PLOT_FILENAME)) {
-        File f = SPIFFS.open(UPLOAD_PLOT_FILENAME, "r");
-        server.streamFile(f, "application/json");
-        f.close();
-    } else {
-      server.send(404, "text/plain", "NotFound");
-    }
-}
-
-bool postZoomFactor() {
-    StaticJsonDocument<50> zoomJson;
-    String body = server.arg("plain");
-    if (DeserializationError error = deserializeJson(zoomJson, body)) {
-        Serial.println("error parsing json");
-        server.send(400);
-        return false;
-    }
-    zoomFactor = zoomJson["zoomFactor"];
-    server.send(201, "text/plain", "zoom:" + String(zoomFactor));
-    writeConfig();
-
-    return true;
-}
-
-bool postWlanSettings() {
-    StaticJsonDocument<100> wlanJson;
-    String body = server.arg("plain");
-    if (DeserializationError error = deserializeJson(wlanJson, body)) {
-        Serial.println("error parsing json");
-        server.send(400);
-        return false;
-    }
-    ssid = wlanJson["ssid"];
-    password = wlanJson["password"];
-    server.send(201, "text/plain", "wlan:" + String(ssid));
-    writeConfig();
-    // initServer();
-
-    return true;
-}
-
-bool postPlotterConfig() {
-    Serial.println("postPlotterConfig");
-    StaticJsonDocument<500> plotterConfigJson;
-    String body = server.arg("plain");
-    Serial.println(body);
-    if (DeserializationError error = deserializeJson(plotterConfigJson, body)) {
-        Serial.println("error parsing json");
-        server.send(400);
-        return false;
-    }
-    canvasWidth = plotterConfigJson["canvasWidth"];
-    currentLeft = plotterConfigJson["currentLeft"];
-    currentRight = plotterConfigJson["currentRight"];
-    zoomFactor = plotterConfigJson["zoomFactor"];
-    centerX = canvasWidth / 2;
-    centerY = sqrt(pow(canvasWidth, 2) - pow(centerX, 2));
-    writeConfig();
-    server.send(201, "application/json", configJson["plotter"]);
-
-    return true;
-}
-
-
-void postFileUpload(){
-    Serial.println("Upload.");
-    static File fsUploadFile;
-    HTTPUpload& upload = server.upload();
-    if (upload.status == UPLOAD_FILE_START) {
-        fsUploadFile = SPIFFS.open(UPLOAD_PLOT_FILENAME, "w");
-    } else if (upload.status == UPLOAD_FILE_WRITE) {
-        printf("Upload Data: %u\n", upload.currentSize);
-        if (fsUploadFile)
-            fsUploadFile.write(upload.buf, upload.currentSize);
-    } else if (upload.status == UPLOAD_FILE_END) {
-        if (fsUploadFile)
-            fsUploadFile.close();
-        printf("Upload Size: %u\n", upload.totalSize);
-        server.sendContent(HeaderUploadPlot);
-    }
-}
-
-void postPlotStop() {
-    printing = false;
-    server.send(200, "text/plain", "Plot stopped.");
-}
-
-void getUpload() {
-    server.send(200, "text/html", UploadPlot);
-}
-
-
-void getRoot() {
-    server.send(200, "text/html", configJson["plotter"]);
-}
 
 
