@@ -2,17 +2,28 @@
 
 const int motorSpeed = 2;
 
+void setOrigo() {
+    // law of cosines
+    float enumerator = pow(canvasWidth, 2) + pow(currentLeft, 2) - pow(currentRight, 2);
+    float denominator = 2 * canvasWidth * currentLeft;
+    float angle = acos(enumerator / denominator);
+    origoX = currentLeft * cos(angle);
+    origoY = currentLeft * sin(angle);
+    Serial.print(origoX);
+    Serial.print(" origo ");
+    Serial.println(origoY);
+}
+
 void initConfig() {
     configJson["server"]["ssid"] = ssid;
     configJson["server"]["password"] = password;
     configJson["plotter"]["canvasWidth"] = canvasWidth;
     configJson["plotter"]["currentLeft"] = currentLeft;
     configJson["plotter"]["currentRight"] = currentRight;
-    configJson["plotter"]["centerX"] = centerX;
-    configJson["plotter"]["centerY"] = centerY;
     configJson["plotter"]["zoomFactor"] = zoomFactor;
     serializeJson(configJson, configData);
     Serial.println(configData);
+    setOrigo();
 }
 
 bool setConfig() {
@@ -28,8 +39,6 @@ bool setConfig() {
     canvasWidth = newConfigJson["plotter"]["canvasWidth"];
     currentLeft = newConfigJson["plotter"]["currentLeft"];
     currentRight = newConfigJson["plotter"]["currentRight"];
-    centerX = newConfigJson["plotter"]["centerX"];
-    centerY = newConfigJson["plotter"]["centerY"];
     zoomFactor = newConfigJson["plotter"]["zoomFactor"];
     initConfig();
 

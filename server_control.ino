@@ -1,13 +1,10 @@
 #include <DNSServer.h>
 #include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
 #include "Config.h"
 
 IPAddress accessPointIP(192, 168, 0, 1);
 IPAddress netMask(255, 255, 255, 0);
 DNSServer dnsServer;
-
-ESP8266WebServer server(80);
 
 const char HeaderUploadPlot[] PROGMEM = "HTTP/1.1 303 OK\r\nLocation:/plot\r\nCache-Control: no-cache\r\n";
 const char UploadPlot[] PROGMEM = R"(<form method="POST" action="/plot" enctype="multipart/form-data">
@@ -129,14 +126,12 @@ bool postPlotterConfig() {
     currentLeft = plotterConfigJson["currentLeft"];
     currentRight = plotterConfigJson["currentRight"];
     zoomFactor = plotterConfigJson["zoomFactor"];
-    centerX = canvasWidth / 2;
-    centerY = sqrt(pow(canvasWidth, 2) - pow(centerX, 2));
+    setOrigo();
     writeConfig();
     server.send(201, "application/json", configJson["plotter"]);
 
     return true;
 }
-
 
 void postFileUpload(){
     Serial.println("Upload.");

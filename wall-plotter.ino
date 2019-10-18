@@ -2,7 +2,10 @@
 #include "FS.h"
 #include <Servo.h>
 #include <StepperMotor.h>
+#include <ESP8266WebServer.h>
 #include "Config.h"
+
+ESP8266WebServer server(80);
 
 StepperMotor motorLeft(MOTOR_LEFT_1, MOTOR_LEFT_2, MOTOR_LEFT_3, MOTOR_LEFT_4);
 StepperMotor motorRight(MOTOR_RIGHT_1, MOTOR_RIGHT_2, MOTOR_RIGHT_3, MOTOR_RIGHT_4);
@@ -17,18 +20,15 @@ const char* password = "PASSWORD";
 long canvasWidth = 1000;
 long currentLeft = canvasWidth;
 long currentRight = canvasWidth;
-float centerX = canvasWidth / 2;
-float centerY = sqrt(pow(canvasWidth, 2) - pow(centerX, 2));
 float zoomFactor = 1;
 
+static float origoX = canvasWidth / 2;
+static float origoY = sqrt(pow(canvasWidth, 2) - pow(origoX, 2));
 static float lastX = 0;
 static float lastY = 0;
 static float homeX = 0;
 static float homeY = 0;
 char configData[] = "{\"server\":{\"ssid\":\"ssid\",\"password\":\"password\"},\"plotter\":{\"canvasWidth\":\"canvasWidth\",\"currentLeft\":\"currentLeft\",\"currentRight\":\"currentRight\",\"zoomFactor\":\"zoomFactor\"}}";
-
-
-void writeConfig();
 
 void setup() {
     Serial.begin(9600);
@@ -103,9 +103,9 @@ void drawLine(long distanceLeft, long distanceRight){
 void getDistance(float x, float y, long *distanceLeft, long *distanceRight) {
     float nextX = x + lastX;
     float nextY = y + lastY;
-    float leftX = nextX + centerX;
-    float rightX = nextX - centerX;
-    float yPos  = nextY + centerY;
+    float leftX = origoX + nextX;
+    float rightX = canvasWidth - leftX;
+    float yPos  = nextY + origoY;
     long newLeft  = sqrt(pow(leftX, 2) + pow(yPos, 2));
     long newRight = sqrt(pow(rightX, 2) + pow(yPos, 2));
     *distanceLeft  = (newLeft - currentLeft) * zoomFactor;
@@ -164,6 +164,7 @@ bool startPlot() {
                 point = 0;
             }
             while (pch != NULL && point > 0) {
+                server.handleClient();
                 if (!printing) {
                     servoPen.write(PEN_UP);
                     break;
