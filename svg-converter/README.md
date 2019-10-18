@@ -45,13 +45,6 @@ We currently struggle with the big `"M"` only!
 
 L, l, H, h, V, v and  m have to be done... Hands on! Contributers welcome ;)
 
-## Usage
-```
-> node svg2json.js example.svg
-```
-The data-output will be stored as `wall-plotter.data`.
-
-
 # how to create a "working" SVG
 
 I'm using `gimp` to create the svg templates. Gimp creates path-instructions in a single path-tag with multiple (big) "M" lines.
@@ -65,8 +58,14 @@ I prefer to:
 - Right-click the layer. Choose select from alpha.
 - Convert selection into path (`selection` -> `to path`)
 - Switch from *layers* to *path*
-- Right-click the path-layer. Use .svg as suffix. this exports the path-layer as svg
+- Right-click the path-layer and choose export, use .svg as suffix. This exports the path-layer as svg.
 
 ***thats all***
 
 These SVG-files can easily be converted to wall-plotter.data!
+
+## Usage
+```
+> node svg2json.js example.svg
+```
+The data-output will be stored as `wall-plotter.data`.
