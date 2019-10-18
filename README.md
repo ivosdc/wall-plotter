@@ -9,7 +9,6 @@ This project is inspired by https://www.hackster.io/fredrikstridsman/stringent-t
 Time goes by... I have no Arduino left. But there are 3 Node-MCU boards in my garage.
 My needs were to use a `ESP 8266` board instead of a *poor* Arduino.
 
-What happens until now:
 
 ### Hardware:
 - 1 x NodeMCU 12e (ESP8266, I used a mini)
@@ -23,20 +22,26 @@ What happens until now:
 
 ![wall-plotter after work](assets/wall-plotter-prototype.png "Protptype")
 
+
+##What happens until now:
+
 ### Spawns own WiFi when no WiFi is reachable. 
  - you can enter your own WiFi parameter. Just POST a json ``` {"ssid":"MY-SSID","password":"PASSWORD"} ``` to the server.
  *You need a rest-api plugin for your browser or a tool like postman!*
  - Default IP from own **Accespoint 192.168.0.1**
  - Your uploaded WiFI credentials are stored in a persistant config.json
 
-### Convert "gimp"svgs to plot data 
+### *minimal* CLI tool to convert *gimp*-svg to plotter-data
+Convert "gimp"svgs to plot data 
  *cd wall-plotter/svg-converter*
  
  ```
  > node svg2json.js svg/vws.svg
 ```
 
- This will create a `wall-plotter.data` file for upload.
+This will create a `wall-plotter.data` file for upload.
+See the svg-converter [README.md](svg-converter/README.md) for details.
+
 
 ### Upload plots with WiFi 
  - Upload `wall-plotter.data` to ESP8266 `/upload`. A webform for file upload is presented.
