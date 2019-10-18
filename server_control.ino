@@ -1,3 +1,5 @@
+#include <DNSServer.h>
+#include <ESP8266WiFi.h>
 #include "Config.h"
 
 IPAddress accessPointIP(192, 168, 0, 1);

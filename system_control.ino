@@ -1,5 +1,6 @@
 #include "Config.h"
 
+const int motorSpeed = 2;
 
 void initConfig() {
     configJson["server"]["ssid"] = ssid;

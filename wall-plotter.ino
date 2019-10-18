@@ -3,20 +3,13 @@
 #include <Servo.h>
 #include <StepperMotor.h>
 #include <ESP8266WebServer.h>
-#include <DNSServer.h>
-#include <ESP8266WiFi.h>
-
 #include "Config.h"
 
 ESP8266WebServer server(80);
-
-
 StepperMotor motorLeft(MOTOR_LEFT_1, MOTOR_LEFT_2, MOTOR_LEFT_3, MOTOR_LEFT_4);
 StepperMotor motorRight(MOTOR_RIGHT_1, MOTOR_RIGHT_2, MOTOR_RIGHT_3, MOTOR_RIGHT_4);
-
 const int motorLeftDirection = -1;
 const int motorRightDirection = 1;
-const int motorSpeed = 2;
 Servo servoPen;
 bool printing = true;
 
