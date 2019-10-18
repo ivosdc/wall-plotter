@@ -1,15 +1,18 @@
-# wall-plotter
-esp-8266 wall plotter
+# ESP-8266 wall-plotter
+Work in progress - no Version
 
-This project is inspired by https://www.hackster.io/fredrikstridsman/stringent-the-15-wall-plotter-d965ca - good work!
+![wall-plotter after work](assets/wall-plotter-cat.png "ESP-8266 wall-plotter")
 
 ### Why?
-Time goes by... I have no Arduino left. But there are 3 Node-MCU boards in my garage.
+This project is inspired by https://www.hackster.io/fredrikstridsman/stringent-the-15-wall-plotter-d965ca - good work!
 
-My needs were to use a Node-MCU board instead of a *poor* Arduino. In the ongoing project we will:
+Time goes by... I have no Arduino left. But there are 3 Node-MCU boards in my garage.
+My needs were to use a `ESP 8266` board instead of a *poor* Arduino.
+
+What happens until now:
 
 ### Hardware:
-- 1 x NodeMCU 12e (ESP8266)
+- 1 x NodeMCU 12e (ESP8266, I used a mini)
 - 2 x step motor 28BYJ-48
 - 1 x case (https://github.com/snebragd/stringent/blob/master/Hardware/)
 - 2 x spools (https://github.com/snebragd/stringent/blob/master/Hardware/spool2.stl)
@@ -18,6 +21,8 @@ My needs were to use a Node-MCU board instead of a *poor* Arduino. In the ongoin
 - a pen
 - rubber band
 
+![wall-plotter after work](assets/wall-plotter-prototype.png "Protptype")
+
 ### Spawns own WiFi when no WiFi is reachable. 
  - you can enter your own WiFi parameter. Just POST a json ``` {"ssid":"MY-SSID","password":"PASSWORD"} ``` to the server.
  *You need a rest-api plugin for your browser or a tool like postman!*
@@ -25,8 +30,12 @@ My needs were to use a Node-MCU board instead of a *poor* Arduino. In the ongoin
  - Your uploaded WiFI credentials are stored in a persistant config.json
 
 ### Convert "gimp"svgs to plot data 
- - cd svg-converter
- - node svg2json.js svg/vws.svg
+ *cd wall-plotter/svg-converter*
+ 
+ ```
+ > node svg2json.js svg/vws.svg
+```
+
  This will create a `wall-plotter.data` file for upload.
 
 ### Upload plots with WiFi 
@@ -40,3 +49,6 @@ My needs were to use a Node-MCU board instead of a *poor* Arduino. In the ongoin
 ### Used libraries:
 - https://github.com/rydepier/Arduino-and-ULN2003-Stepper-Motor-Driver
 - ArduinoJson6
+
+![wall-plotter after work](assets/wall-plotter-board.png "Board")
+![wall-plotter after work](assets/wall-plotter-board2.png "Sockets for ESP-8266 and stepper-driver.")
