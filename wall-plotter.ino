@@ -2,10 +2,8 @@
 #include "FS.h"
 #include <Servo.h>
 #include <StepperMotor.h>
-#include <ESP8266WebServer.h>
 #include "Config.h"
 
-ESP8266WebServer server(80);
 StepperMotor motorLeft(MOTOR_LEFT_1, MOTOR_LEFT_2, MOTOR_LEFT_3, MOTOR_LEFT_4);
 StepperMotor motorRight(MOTOR_RIGHT_1, MOTOR_RIGHT_2, MOTOR_RIGHT_3, MOTOR_RIGHT_4);
 const int motorLeftDirection = -1;
@@ -41,13 +39,8 @@ void setup() {
     Serial.println(canvasWidth);
     initMotors();
     initServer();
-    server.begin();
     serverRouting();
     Serial.println("Ready!");
-}
-
-void loop() {
-    server.handleClient();
 }
 
 void drawLine(long distanceLeft, long distanceRight){
@@ -123,10 +116,9 @@ void goHome() {
     homeY = 0;
 }
 
-void postPlotStart() {
+bool startPlot() {
     printing = true;
     if (SPIFFS.exists(UPLOAD_PLOT_FILENAME)) {
-        server.send(200);
         char newPlotData[2000];
         File f = SPIFFS.open(UPLOAD_PLOT_FILENAME, "r");
         int point = 0;
@@ -164,7 +156,6 @@ void postPlotStart() {
                     homeY = homeY + y;
                     getDistance(x,y, &distanceLeft, &distanceRight);
                     drawLine(distanceLeft, distanceRight);
-                    server.handleClient();
                     //printf ("X: %s\n",pch);
                     x = atof(pch);
                 } else {
@@ -181,7 +172,8 @@ void postPlotStart() {
         Serial.println("Plot done.");
         printing = false;
         goHome();
+        return true;
     } else {
-       server.send(404, "text/plain", "NotFound");
+       return false;
     }
 }

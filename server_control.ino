@@ -1,11 +1,13 @@
 #include <DNSServer.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
 #include "Config.h"
 
 IPAddress accessPointIP(192, 168, 0, 1);
 IPAddress netMask(255, 255, 255, 0);
 DNSServer dnsServer;
 
+ESP8266WebServer server(80);
 
 const char HeaderUploadPlot[] PROGMEM = "HTTP/1.1 303 OK\r\nLocation:/plot\r\nCache-Control: no-cache\r\n";
 const char UploadPlot[] PROGMEM = R"(<form method="POST" action="/plot" enctype="multipart/form-data">
@@ -68,6 +70,7 @@ void initServer() {
     } else {
         Serial.println(WiFi.localIP());
     }
+    server.begin();
 }
 
 void getPlot() {
@@ -162,9 +165,16 @@ void getUpload() {
     server.send(200, "text/html", UploadPlot);
 }
 
-
 void getRoot() {
     server.send(200, "text/html", configJson["plotter"]);
+}
+
+void postPlotStart() {
+    if (startPlot()) {
+        server.send(200);
+    } else {
+        server.send(404, "text/plain", "NotFound");
+    }
 }
 
 void serverRouting() {
@@ -178,3 +188,8 @@ void serverRouting() {
     server.on("/upload", HTTP_GET, getUpload);
     server.on("/config", HTTP_POST, postPlotterConfig);
 }
+
+void loop() {
+    server.handleClient();
+}
+
