@@ -43,7 +43,7 @@ void setup() {
     Serial.println("Ready!");
 }
 
-void initDirection(long *distL, long *distR, int *directionRight, int *directionLeft, long distanceLeft, long distanceRight){
+void initDirection(long *distL, long *distR, int *directionLeft, int *directionRight, long distanceLeft, long distanceRight){
     if (distanceLeft < 0) {
         *directionLeft = *directionLeft * -1;
         *distL = *distL * -1;
@@ -67,17 +67,7 @@ long calcTicks(long *ticks, long *distL, long *distR) {
     }
 }
 
-void drawLine(long distanceLeft, long distanceRight){
-    int directionLeft = motorLeftDirection;
-    int directionRight = motorRightDirection;
-    long distL = distanceLeft;
-    long distR = distanceRight;
-    initDirection(&distL, &distR, &directionRight, &directionLeft, distanceLeft, distanceRight);
-    long ticks = 0;
-    calcTicks(&ticks, &distL, &distR);
-    Serial.print(distanceLeft);
-    Serial.print(" dist ");
-    Serial.println(distanceRight);
+void moveMotors(long ticks, long distL, long distR, long directionLeft, long directionRight) {
     int countLeft = 0;
     int countRight = 0;
     for (long i = 0; i < ticks; i++) {
@@ -94,7 +84,20 @@ void drawLine(long distanceLeft, long distanceRight){
     Serial.print(countRight * motorLeftDirection);
     Serial.print(" count ");
     Serial.println(countLeft * motorRightDirection);
-    
+}
+
+void drawLine(long distanceLeft, long distanceRight){
+    Serial.print(distanceLeft);
+    Serial.print(" dist ");
+    Serial.println(distanceRight);
+    int directionLeft = motorLeftDirection;
+    int directionRight = motorRightDirection;
+    long distL = distanceLeft;
+    long distR = distanceRight;
+    long ticks = 0;
+    initDirection(&distL, &distR, &directionLeft, &directionRight, distanceLeft, distanceRight);
+    calcTicks(&ticks, &distL, &distR);
+    moveMotors(ticks, distL, distR, directionLeft, directionRight);
 }
 
 void getDistance(float x, float y, long *distanceLeft, long *distanceRight) {
@@ -124,14 +127,30 @@ void goHome() {
     homeY = 0;
 }
 
+void moveToXY(long x, long y) {
+    long distanceLeft = 0;
+    long distanceRight = 0;
+    homeX = homeX + x;
+    homeY = homeY + y;
+    getDistance(x,y, &distanceLeft, &distanceRight);
+    drawLine(distanceLeft, distanceRight);
+}
+
+void plotDone() {
+    servoPen.write(PEN_UP);
+    Serial.println("Plot done.");
+    printing = false;
+    goHome();
+}
+
 bool startPlot() {
+    int point = 0;
+    float x = 0;
+    float y = 0;
+    char newPlotData[2000];
     printing = true;
     if (SPIFFS.exists(UPLOAD_PLOT_FILENAME)) {
-        char newPlotData[2000];
         File f = SPIFFS.open(UPLOAD_PLOT_FILENAME, "r");
-        int point = 0;
-        float x = 0;
-        float y = 0;
         while(f.available()) {
             if (!printing) {
                 Serial.println("Plot stopped.");
@@ -156,16 +175,9 @@ bool startPlot() {
                         servoPen.write(PEN_DOWN);
                     }
                     yield();
-                    long distanceLeft = 0;
-                    long distanceRight = 0;
-                    homeX = homeX + x;
-                    homeY = homeY + y;
-                    getDistance(x,y, &distanceLeft, &distanceRight);
-                    drawLine(distanceLeft, distanceRight);
-                    //printf ("X: %s\n",pch);
+                    moveToXY(x, y);
                     x = atof(pch);
                 } else {
-                    //printf ("Y: %s\n",pch);
                     y = atof(pch);
                 }
                 pch = strtok (NULL, ",");
@@ -174,12 +186,8 @@ bool startPlot() {
             point++;
         }
         f.close();
-        servoPen.write(PEN_UP);
-        Serial.println("Plot done.");
-        printing = false;
-        goHome();
+        plotDone();
         return true;
-    } else {
-       return false;
     }
+    return false;
 }
