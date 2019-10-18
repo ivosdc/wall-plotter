@@ -49,7 +49,16 @@ This will create a `wall-plotter.data` file for upload.
 - Change the output size. POST ``` {"zoomFactor":"1"} ``` to `/zoom`. 1 (no zoom) is default. 
  *You need a rest-api plugin for your browser or a tool like postman!*
 - Set canvas width and the position of the wall-plotter. POST ```{"canvasWidth":"1000","currentLeft":"330","currentRight":"999","zoomFactor":"1"}``` to `/config`.
- 
+
+### Start / Stop the wall-plotter on demand
+- POST `/plot/start`: This starts plotting your uploaded *wall-plotter.data*
+- POST `/plot/stop`: This will interrupt the running plot, if there is any.
+- GET `/plot`: Shows the last stored *wall-plotter.data*
+
+[See all API-endpoints in wall-plotter::serverRouting()](https://github.com/ivosdc/wall-plotter/blob/6ce040f6c54414caa6de0233a5dc669bce96f97b/wall-plotter.ino#L422)
+
+
+
 ### Soldering
 ![wall-plotter after work](assets/wall-plotter-board.png "Board")
 ![wall-plotter after work](assets/wall-plotter-board2.png "Sockets for ESP-8266 and stepper-driver.")
