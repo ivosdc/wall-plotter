@@ -4,8 +4,9 @@
 
 
 # about this tool
-*This Version:*
 extracts the first svg:path the :d information and converts *"M x y"* (SVGs/G-code uppercase M paramater) to the wall-plotter.data format:
+
+example.svg:
 ```
 <svg xmlns="http://www.w3.org/2000/svg"
      width="8.88889in" height="5.55556in"
@@ -17,6 +18,7 @@ extracts the first svg:path the :d information and converts *"M x y"* (SVGs/G-co
              174.36,211.00 171.67,211.00 166.94,230.19 162.09,211.00 159.00,211.00 164.55,233.00" />
 </svg>
 ```
+wall-plotter.data:
 ``` 
 m
 -9.55,16.24
@@ -66,6 +68,8 @@ These SVG-files can easily be converted to wall-plotter.data!
 
 ## Usage
 ```
-> node svg2json.js example.svg
+> node svg2data.js example.svg
 ```
 The data-output will be stored as `wall-plotter.data`.
+
+Additionally a `wall-plotter.svg` is created based on the converted wall-plotter.data 
