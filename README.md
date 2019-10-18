@@ -2,6 +2,7 @@
 Work in progress - no Version
 
 ![wall-plotter after work](assets/wall-plotter-cat.png "ESP-8266 wall-plotter")
+![The SVG](svg-converter/svg/cat.svg "ESP-8266 wall-plotter")
 
 ### Why?
 This project is inspired by https://www.hackster.io/fredrikstridsman/stringent-the-15-wall-plotter-d965ca - good work!
@@ -20,7 +21,7 @@ My needs were to use a `ESP 8266` board instead of a *poor* Arduino.
 - a pen
 - rubber band
 
-![wall-plotter after work](assets/wall-plotter-prototype.png "Protptype")
+![wall-plotter after work](assets/wall-plotter-prototype.png "Prototype")
 
 
 ## What happens until now:
