@@ -23,7 +23,7 @@ My needs were to use a `ESP 8266` board instead of a *poor* Arduino.
 ![wall-plotter after work](assets/wall-plotter-prototype.png "Protptype")
 
 
-##What happens until now:
+## What happens until now:
 
 ### Spawns own WiFi when no WiFi is reachable. 
  - you can enter your own WiFi parameter. Just POST a json ``` {"ssid":"MY-SSID","password":"PASSWORD"} ``` to the server.
@@ -31,16 +31,15 @@ My needs were to use a `ESP 8266` board instead of a *poor* Arduino.
  - Default IP from own **Accespoint 192.168.0.1**
  - Your uploaded WiFI credentials are stored in a persistant config.json
 
-### *minimal* CLI tool to convert *gimp*-svg to plotter-data
-Convert "gimp"svgs to plot data 
- *cd wall-plotter/svg-converter*
- 
- ```
- > node svg2json.js svg/vws.svg
+### *minimal* CLI tool to convert *gimp*-svg to plotter-data 
+See the svg-converter [README.md](svg-converter/README.md):
+
+```
+> cd wall-plotter/svg-converter 
+> node svg2json.js svg/vws.svg
 ```
 
 This will create a `wall-plotter.data` file for upload.
-See the svg-converter [README.md](svg-converter/README.md) for details.
 
 
 ### Upload plots with WiFi 
@@ -51,9 +50,10 @@ See the svg-converter [README.md](svg-converter/README.md) for details.
  *You need a rest-api plugin for your browser or a tool like postman!*
 - Set canvas width and the position of the wall-plotter. POST ```{"canvasWidth":"1000","currentLeft":"330","currentRight":"999","zoomFactor":"1"}``` to `/config`.
  
+### Soldering
+![wall-plotter after work](assets/wall-plotter-board.png "Board")
+![wall-plotter after work](assets/wall-plotter-board2.png "Sockets for ESP-8266 and stepper-driver.")
+
 ### Used libraries:
 - https://github.com/rydepier/Arduino-and-ULN2003-Stepper-Motor-Driver
 - ArduinoJson6
-
-![wall-plotter after work](assets/wall-plotter-board.png "Board")
-![wall-plotter after work](assets/wall-plotter-board2.png "Sockets for ESP-8266 and stepper-driver.")
