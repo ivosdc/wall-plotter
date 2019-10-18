@@ -35,7 +35,7 @@ m
 11.00,-0.96
 ```
 Every section "M" of a svg/xml-path section will be converted into a `points-array` with `X` and `Y` coords.
-By the way, the wall-plotter json format corresponds to the svg/G-code *small "m"* parameter.
+By the way, the *wall-plotter.data* format corresponds to the svg/G-code *small "m"* parameter.
 Big "M" means absolute X,Y values. Small "m" means the next point X,Y are the diff to the last X,Y.
 
 I found a good explanation of the svg-path:  https://css-tricks.com/svg-path-syntax-illustrated-guide/ .
@@ -43,7 +43,7 @@ I found a good explanation of the svg-path:  https://css-tricks.com/svg-path-syn
 
 We currently struggle with the big `"M"` only!
 
-L, l, H, h, V, v and  m have to be done... Contributers welcome ;)
+L, l, H, h, V, v and  m have to be done... Hands on! Contributers welcome ;)
 
 ## Usage
 ```
@@ -59,9 +59,13 @@ Just plain extraction of the `svg:path:-d` information is done.
 The parser crawls and splits "M" parts in the path.
 
 ## In gimp you can convert drawings to path instructions:
-- chose select from alpha (e.g.) (or your prefered selection)
-- convert selection into path
-- export paths-layer as svg
+I prefer to:
+- Set the picture mode to b/w and back to rgb. Rgb is needed for the next step.
+- Use `color to transparence`. Set your background color to transparent.
+- Right-click the layer. Choose select from alpha.
+- Convert selection into path (`selection` -> `to path`)
+- Switch from *layers* to *path*
+- Right-click the path-layer. Use .svg as suffix. this exports the path-layer as svg
 
 ***thats all***
 
