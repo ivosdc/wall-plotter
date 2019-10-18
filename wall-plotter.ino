@@ -202,6 +202,3 @@ void postPlotStart() {
        server.send(404, "text/plain", "NotFound");
     }
 }
-
-
-

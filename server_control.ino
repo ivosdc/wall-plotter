@@ -168,6 +168,3 @@ void serverRouting() {
     server.on("/upload", HTTP_GET, getUpload);
     server.on("/config", HTTP_POST, postPlotterConfig);
 }
-
-
-
