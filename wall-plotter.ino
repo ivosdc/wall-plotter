@@ -43,30 +43,38 @@ void setup() {
     Serial.println("Ready!");
 }
 
+void initDirection(long *distL, long *distR, int *directionRight, int *directionLeft, long distanceLeft, long distanceRight){
+    if (distanceLeft < 0) {
+        *directionLeft = *directionLeft * -1;
+        *distL = *distL * -1;
+    }
+    if (distanceRight < 0) {
+        *directionRight = *directionRight * -1;
+        *distR = *distR * -1;
+    }
+}
+
+long calcTicks(long *ticks, long *distL, long *distR) {
+    *ticks = *distL * *distR;
+    if (*distL == 0) {
+        *ticks = *distR * *distR;
+        *distL = *distR;
+        *distR = 0;
+    } else if (*distR == 0) {
+        *ticks = *distL * *distL;
+        *distR = *distL;
+        *distL = 0;
+    }
+}
+
 void drawLine(long distanceLeft, long distanceRight){
     int directionLeft = motorLeftDirection;
     int directionRight = motorRightDirection;
-    int tmpDirection = 0;
     long distL = distanceLeft;
     long distR = distanceRight;
-    if (distanceLeft < 0) {
-        directionLeft = directionLeft * -1;
-        distL = distL * -1;
-    }
-    if (distanceRight < 0) {
-        directionRight = directionRight * -1;
-        distR = distR * -1;
-    }
-    long ticks = distL * distR;
-    if (distL == 0) {
-        ticks = distR * distR;
-        distL = distR;
-        distR = 0;
-    } else if (distR == 0) {
-        ticks = distL * distL;
-        distR = distL;
-        distL = 0;
-    }
+    initDirection(&distL, &distR, &directionRight, &directionLeft, distanceLeft, distanceRight);
+    long ticks = 0;
+    calcTicks(&ticks, &distL, &distR);
     Serial.print(distanceLeft);
     Serial.print(" dist ");
     Serial.println(distanceRight);
@@ -134,8 +142,6 @@ bool startPlot() {
             pch = strtok (newPlotData,",");
             int counter = 0;
             if (String(pch).indexOf("m") != -1) {
-                servoPen.write(PEN_UP);
-                Serial.println("PEN_UP:");
                 point = 0;
             }
             while (pch != NULL && point > 0) {

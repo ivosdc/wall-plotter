@@ -170,9 +170,8 @@ void getRoot() {
 }
 
 void postPlotStart() {
-    if (startPlot()) {
-        server.send(200);
-    } else {
+    server.send(200);
+    if (!startPlot()) {
         server.send(404, "text/plain", "NotFound");
     }
 }
