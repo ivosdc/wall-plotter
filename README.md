@@ -23,12 +23,16 @@ My needs were to use a `ESP 8266` board with its WiFi capabilities instead of a 
 
 ![wall-plotter after work](assets/wall-plotter-prototype.png "End of prototype")
 
+### Software:
+**You need a [rest-api plugin for your browser](https://github.com/RESTEDClient/RESTED) or a tool like [postman](https://www.getpostman.com/)!**
+- Arduino IDE
+- gimp
+- node.js
 
 ## What happens until now:
 
 ### Spawns own WiFi when no WiFi is reachable. 
  - you can enter your own WiFi parameter. Just POST a json ``` {"ssid":"MY-SSID","password":"PASSWORD"} ``` to the server.
- *You need a [rest-api plugin for your browser](https://github.com/RESTEDClient/RESTED) or a tool like [postman](https://www.getpostman.com/)!*
  - Default IP from own **Accespoint 192.168.0.1**
  - Your uploaded WiFI credentials are stored in a persistant config.json
 
@@ -48,7 +52,6 @@ This will create a `wall-plotter.data` file for upload.
 
 ### Set configuration parameter
 - Change the output size. POST ``` {"zoomFactor":"1"} ``` to `/zoom`. 1 (no zoom) is default. 
- *You need a rest-api plugin for your browser or a tool like postman!*
 - Set canvas width and the position of the wall-plotter. POST ```{"canvasWidth":"1000","currentLeft":"330","currentRight":"999","zoomFactor":"1"}``` to `/config`.
 
 ### Start / Stop the wall-plotter on demand
