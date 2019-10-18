@@ -1,5 +1,8 @@
 #include "Config.h"
 
+const char HeaderUploadPlot[] PROGMEM = "HTTP/1.1 303 OK\r\nLocation:/plot\r\nCache-Control: no-cache\r\n";
+const char UploadPlot[] PROGMEM = R"(<form method="POST" action="/plot" enctype="multipart/form-data">
+     <input type="file" name="/wall-plotter.data"><input type="submit" value="Upload"></form>Upload a wall-plott.data)";
 
 void initDNS() {
     Serial.println("Starting DNS-Server.");

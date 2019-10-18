@@ -15,13 +15,14 @@ DNSServer dnsServer;
 
 StepperMotor motorLeft(MOTOR_LEFT_1, MOTOR_LEFT_2, MOTOR_LEFT_3, MOTOR_LEFT_4);
 StepperMotor motorRight(MOTOR_RIGHT_1, MOTOR_RIGHT_2, MOTOR_RIGHT_3, MOTOR_RIGHT_4);
+
 const int motorLeftDirection = -1;
 const int motorRightDirection = 1;
 const int motorSpeed = 2;
 Servo servoPen;
+bool printing = true;
 
 StaticJsonDocument<1000> configJson;
-bool printing = true;
 const char* ssid  = "SSID";
 const char* password = "PASSWORD";
 long canvasWidth = 1000;
@@ -30,42 +31,33 @@ long currentRight = canvasWidth;
 float centerX = canvasWidth / 2;
 float centerY = sqrt(pow(canvasWidth, 2) - pow(centerX, 2));
 float zoomFactor = 1;
+
 static float lastX = 0;
 static float lastY = 0;
 static float homeX = 0;
 static float homeY = 0;
 char configData[] = "{\"server\":{\"ssid\":\"ssid\",\"password\":\"password\"},\"plotter\":{\"canvasWidth\":\"canvasWidth\",\"currentLeft\":\"currentLeft\",\"currentRight\":\"currentRight\",\"zoomFactor\":\"zoomFactor\"}}";
 
-const char HeaderUploadPlot[] PROGMEM = "HTTP/1.1 303 OK\r\nLocation:/plot\r\nCache-Control: no-cache\r\n";
-const char UploadPlot[] PROGMEM = R"(<form method="POST" action="/plot" enctype="multipart/form-data">
-     <input type="file" name="/wall-plotter.data"><input type="submit" value="Upload"></form>Upload a wall-plott.data)";
 
 void writeConfig();
-
 
 void setup() {
     Serial.begin(9600);
     Serial.println("Setup");
     initConfig();
     initFileSystem();
-
     Serial.print("Canvas width:");
     Serial.println(canvasWidth);
-
     initMotors();
-
     initServer();
     server.begin();
     serverRouting();
-
     Serial.println("Ready!");
 }
 
 void loop() {
     server.handleClient();
 }
-
-
 
 void drawLine(long distanceLeft, long distanceRight){
     int directionLeft = motorLeftDirection;

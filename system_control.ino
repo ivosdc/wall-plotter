@@ -1,5 +1,6 @@
 #include "Config.h"
 
+
 void initConfig() {
     configJson["server"]["ssid"] = ssid;
     configJson["server"]["password"] = password;
