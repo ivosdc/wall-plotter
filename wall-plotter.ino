@@ -1,36 +1,29 @@
-#include <Servo.h>
 #include <ArduinoJson.h>
+#include "FS.h"
+#include <Servo.h>
 #include <StepperMotor.h>
 #include <ESP8266WebServer.h>
-#include "FS.h"
 #include <DNSServer.h>
 #include <ESP8266WiFi.h>
 
-#define SERVO_PIN D9
-#define WIFI_INIT_RETRY 20
-#define PEN_UP 50
-#define PEN_DOWN 70
-#define SPOOL_CIRC 94.2 
-#define STEPS_PER_ROTATION 4075.7728395
-#define STEPS_PER_TICK 10
-#define STEPS_PER_MM  (STEPS_PER_ROTATION / SPOOL_CIRC) / STEPS_PER_TICK
-#define UPLOAD_PLOT_FILENAME "/wall-plotter.data"
+#include "Config.h"
 
-StepperMotor motorLeft(D5, D6, D7, D8); // IN1, IN2, IN3, IN4
-StepperMotor motorRight(D1,D2,D3,D4);
-const int motorLeftDirection = -1;
-const int motorRightDirection = 1;
-int motorSpeed = 2;
-Servo servoPen;
-
-const char* ssid  = "SSID";
-const char* password = "PASSWORD";
 ESP8266WebServer server(80);
-IPAddress accessPointIP(192, 168, 0, 1);  
+IPAddress accessPointIP(192, 168, 0, 1);
 IPAddress netMask(255, 255, 255, 0);
 DNSServer dnsServer;
+
+StepperMotor motorLeft(MOTOR_LEFT_1, MOTOR_LEFT_2, MOTOR_LEFT_3, MOTOR_LEFT_4);
+StepperMotor motorRight(MOTOR_RIGHT_1, MOTOR_RIGHT_2, MOTOR_RIGHT_3, MOTOR_RIGHT_4);
+const int motorLeftDirection = -1;
+const int motorRightDirection = 1;
+const int motorSpeed = 2;
+Servo servoPen;
+
 StaticJsonDocument<1000> configJson;
 bool printing = true;
+const char* ssid  = "SSID";
+const char* password = "PASSWORD";
 long canvasWidth = 1000;
 long currentLeft = canvasWidth;
 long currentRight = canvasWidth;
@@ -47,141 +40,28 @@ const char HeaderUploadPlot[] PROGMEM = "HTTP/1.1 303 OK\r\nLocation:/plot\r\nCa
 const char UploadPlot[] PROGMEM = R"(<form method="POST" action="/plot" enctype="multipart/form-data">
      <input type="file" name="/wall-plotter.data"><input type="submit" value="Upload"></form>Upload a wall-plott.data)";
 
-void initDNS() {
-    Serial.println("Starting DNS-Server.");
-    dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
-    dnsServer.start(53, "*", accessPointIP);
-}
+void writeConfig();
 
-void initAccessPoint() {  
-    Serial.print("Starting AccessPoint: ");
-    static char szSSID[12];
-    sprintf(szSSID, "WallPlotter %02d", ESP.getChipId() % 100);
-    Serial.println(szSSID);
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
-    delay(100);
-    bool exists = true;
-    while(exists) {
-        int n = WiFi.scanNetworks();
-        exists = false;
-        for (int i=0; i<n; i++) {
-            String ssid = WiFi.SSID(i);
-            if(strcmp(szSSID, ssid.c_str())==0)
-                exists = true;
-        }
-        if(exists) {
-            char accesPointInUse[50];
-            sprintf(accesPointInUse, "AccessPoint '%s' in use, waiting...", szSSID);
-            Serial.println(accesPointInUse);
-            delay(5000);
-        }
-    }
-    WiFi.mode(WIFI_AP);
-    WiFi.softAPConfig(accessPointIP, accessPointIP, netMask);
-    WiFi.softAP(szSSID);
-    yield();
-    WiFi.persistent(false);
-    WiFi.begin();
-    Serial.print("IP: ");
-    Serial.println(WiFi.softAPIP());
-}
-
-void initConfig() {
-    configJson["server"]["ssid"] = ssid;
-    configJson["server"]["password"] = password;
-    configJson["plotter"]["canvasWidth"] = canvasWidth;
-    configJson["plotter"]["currentLeft"] = currentLeft;
-    configJson["plotter"]["currentRight"] = currentRight;
-    configJson["plotter"]["centerX"] = centerX;
-    configJson["plotter"]["centerY"] = centerY;
-    configJson["plotter"]["zoomFactor"] = zoomFactor;
-    serializeJson(configJson, configData);
-    Serial.println(configData);
-}
-
-bool setConfig() {
-    StaticJsonDocument<1000> newConfigJson;
-    char newConfigData[strlen(configData)];
-    memcpy(newConfigData,configData, strlen(configData) + 1);
-    if (DeserializationError error = deserializeJson(newConfigJson, newConfigData)) {
-        Serial.println("error parsing json");       
-        return false;
-    }
-    ssid = newConfigJson["server"]["ssid"];
-    password = newConfigJson["server"]["password"];
-    canvasWidth = newConfigJson["plotter"]["canvasWidth"];
-    currentLeft = newConfigJson["plotter"]["currentLeft"];
-    currentRight = newConfigJson["plotter"]["currentRight"];
-    centerX = newConfigJson["plotter"]["centerX"];
-    centerY = newConfigJson["plotter"]["centerY"];
-    zoomFactor = newConfigJson["plotter"]["zoomFactor"];
+void setup() {
+    Serial.begin(9600);
+    Serial.println("Setup");
     initConfig();
-    
-    return true;
+    initFileSystem();
+
+    Serial.print("Canvas width:");
+    Serial.println(canvasWidth);
+
+    initMotors();
+
+    initServer();
+    server.begin();
+    serverRouting();
+
+    Serial.println("Ready!");
 }
 
-void initServer() {
-    int retries = 0;
-    Serial.print("Connecting: ");
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid, password);
-    while ((WiFi.status() != WL_CONNECTED) && (retries < WIFI_INIT_RETRY)) {
-        retries++;
-        delay(1000);
-        Serial.print(".");
-    }
-    Serial.println(WiFi.status() == 1 ? " failed" : " ok");
-    if (WiFi.status() == 1) {
-        initDNS();
-        initAccessPoint();
-    } else {
-        Serial.println(WiFi.localIP());
-    }
-}
-
-void initMotors() {
-    motorLeft.setStepDuration(motorSpeed);
-    motorRight.setStepDuration(motorSpeed);
-    servoPen.attach(SERVO_PIN);
-    servoPen.write(PEN_UP);
-}
-
-void writeConfig() {
-    initConfig();
-    File f = SPIFFS.open("/config.json", "w");
-    int bytesWritten = f.println(configData);
-    f.close();
-    if (bytesWritten > 0) {
-        Serial.println("Config written");
-    } else {
-        Serial.println("Config write failed");
-    }
-}
-
-void initFileSystem() {
-    char configFile[1000];
-    configFile[0] = 0;
-    SPIFFS.begin();
-    File f = SPIFFS.open("/config.json", "r");
-    if (!f) {
-        Serial.println("read file failed");
-        Serial.println("Please wait... formatting");
-        SPIFFS.format();
-        Serial.println("Done.");
-        writeConfig();
-    } else {
-        f.readStringUntil('\n').toCharArray(configFile, 1000);
-        f.close();
-        if (strlen(configFile) == 0) {
-            Serial.println("writing config.json");
-            writeConfig();
-        } else {
-            Serial.println("config.json found:");
-            memcpy(configData,configFile, strlen(configFile) + 1);
-            setConfig();
-        }
-    }
+void loop() {
+    server.handleClient();
 }
 
 
@@ -358,7 +238,7 @@ bool postWlanSettings() {
     password = wlanJson["password"];
     server.send(201, "text/plain", "wlan:" + String(ssid));
     writeConfig();
-    initServer();
+    // initServer();
 
     return true;
 }
@@ -418,37 +298,4 @@ void getRoot() {
     server.send(200, "text/html", configJson["plotter"]);
 }
 
-
-void serverRouting() {
-    server.on("/", HTTP_GET, getRoot);
-    server.on("/plot", HTTP_POST, []() {}, postFileUpload);
-    server.on("/plot", HTTP_GET, getPlot);
-    server.on("/plot/stop", HTTP_POST, postPlotStop);
-    server.on("/plot/start", HTTP_POST, postPlotStart);
-    server.on("/zoomfactor", HTTP_POST, postZoomFactor);
-    server.on("/wlan", HTTP_POST, postWlanSettings);
-    server.on("/upload", HTTP_GET, getUpload);
-    server.on("/config", HTTP_POST, postPlotterConfig);
-}
-
-void setup()
-{
-    Serial.begin(9600);
-    Serial.println("Setup");
-    initConfig();
-    initFileSystem();
-
-    Serial.print("Canvas width:");
-    Serial.println(canvasWidth);
-
-    initMotors();
-    initServer();
-    server.begin();
-    serverRouting();
-    Serial.println("Ready!");
-}
-
-void loop() {
-    server.handleClient();
-}
 
