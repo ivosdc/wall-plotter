@@ -84,7 +84,7 @@ wallPlotterJson.lines.forEach(line => {
            smallPoint.y = 0;
        }
     });
-//    points.points.push(zeroPoint);
+    points.points.push(zeroPoint);
     filteredPlotData.lines.push(points);
 });
 wallPlotterJson = filteredPlotData;

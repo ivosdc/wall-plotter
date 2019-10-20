@@ -64,11 +64,15 @@ void setMotorSpeed(long distL, long distR, long directionLeft, long directionRig
     long speedL = speed;
     long speedR = speed;
     if (distL < distR){
-        speedL = (distL * speed / distR);
-        speedR = speed;
+        speedL = 0;
+        if (distR != 0) {
+            speedL = (distL * speed / distR);
+        }
     } else {
-        speedR = (distR * speed / distL);
-        speedL = speed;
+        speedR = 0;
+        if (distL != 0) {
+            speedR = (distR * speed / distL);
+        }
     }
     motorLeft.setSpeed(speedR);
     motorRight.setSpeed(speedL);
