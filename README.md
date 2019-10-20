@@ -67,7 +67,3 @@ This will create a `wall-plotter.data` file for upload.
 ### Soldering
 ![wall-plotter board](assets/wall-plotter-board.png "Board")
 ![wall-plotter labeled](assets/wall-plotter-board-label.png "Sockets for ESP-8266 and stepper-driver.")
-
-### Used libraries:
-- https://github.com/rydepier/Arduino-and-ULN2003-Stepper-Motor-Driver
-- ArduinoJson6

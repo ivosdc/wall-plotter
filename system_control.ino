@@ -1,7 +1,5 @@
 #include "Config.h"
 
-const int motorSpeed = 2;
-
 void setOrigo() {
     // law of cosines
     float enumerator = pow(canvasWidth, 2) + pow(currentLeft, 2) - pow(currentRight, 2);
@@ -46,8 +44,10 @@ bool setConfig() {
 }
 
 void initMotors() {
-    motorLeft.setStepDuration(motorSpeed);
-    motorRight.setStepDuration(motorSpeed);
+    motorLeft.setMaxSpeed(motorMaxSpeed);
+    motorRight.setMaxSpeed(motorMaxSpeed);
+    plotter.addStepper(motorLeft);
+    plotter.addStepper(motorRight);
     servoPen.attach(SERVO_PIN);
     servoPen.write(PEN_UP);
 }

@@ -175,8 +175,8 @@ void serverRouting() {
     server.on("/", HTTP_GET, getRoot);
     server.on("/plot", HTTP_POST, []() {}, postFileUpload);
     server.on("/plot", HTTP_GET, getPlot);
-    server.on("/plot/stop", HTTP_POST, postPlotStop);
-    server.on("/plot/start", HTTP_POST, postPlotStart);
+    server.on("/stop", HTTP_POST, postPlotStop);
+    server.on("/start", HTTP_POST, postPlotStart);
     server.on("/zoomfactor", HTTP_POST, postZoomFactor);
     server.on("/wlan", HTTP_POST, postWlanSettings);
     server.on("/upload", HTTP_GET, getUpload);

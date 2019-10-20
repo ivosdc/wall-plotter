@@ -1,16 +1,20 @@
 #include <ArduinoJson.h>
 #include "FS.h"
 #include <Servo.h>
-#include <StepperMotor.h>
+#include <AccelStepper.h>
+#include <MultiStepper.h>
 #include <ESP8266WebServer.h>
 #include "Config.h"
 
 ESP8266WebServer server(80);
 
-StepperMotor motorLeft(MOTOR_LEFT_1, MOTOR_LEFT_2, MOTOR_LEFT_3, MOTOR_LEFT_4);
-StepperMotor motorRight(MOTOR_RIGHT_1, MOTOR_RIGHT_2, MOTOR_RIGHT_3, MOTOR_RIGHT_4);
-const int motorLeftDirection = -1;
-const int motorRightDirection = 1;
+AccelStepper motorLeft(AccelStepper::HALF4WIRE, MOTOR_LEFT_1, MOTOR_LEFT_3, MOTOR_LEFT_2, MOTOR_LEFT_4);
+AccelStepper motorRight(AccelStepper::HALF4WIRE, MOTOR_RIGHT_1, MOTOR_RIGHT_3, MOTOR_RIGHT_2, MOTOR_RIGHT_4);
+MultiStepper plotter;
+const int motorLeftDirection = 1;
+const int motorRightDirection = -1;
+const int motorMaxSpeed = 250;
+
 Servo servoPen;
 bool printing = true;
 
@@ -20,7 +24,7 @@ const char* password = "PASSWORD";
 long canvasWidth = 1000;
 long currentLeft = canvasWidth;
 long currentRight = canvasWidth;
-float zoomFactor = 1;
+float zoomFactor = 1.0;
 
 static float origoX = canvasWidth / 2;
 static float origoY = sqrt(pow(canvasWidth, 2) - pow(origoX, 2));
@@ -29,6 +33,7 @@ static float lastY = 0;
 static float homeX = 0;
 static float homeY = 0;
 char configData[] = "{\"server\":{\"ssid\":\"ssid\",\"password\":\"password\"},\"plotter\":{\"canvasWidth\":\"canvasWidth\",\"currentLeft\":\"currentLeft\",\"currentRight\":\"currentRight\",\"zoomFactor\":\"zoomFactor\"}}";
+
 
 void setup() {
     Serial.begin(9600);
@@ -43,7 +48,7 @@ void setup() {
     Serial.println("Ready!");
 }
 
-void initDirection(long *distL, long *distR, int *directionLeft, int *directionRight, long distanceLeft, long distanceRight){
+void setDirection(long *distL, long *distR, int *directionLeft, int *directionRight, long distanceLeft, long distanceRight){
     if (distanceLeft < 0) {
         *directionLeft = *directionLeft * -1;
         *distL = *distL * -1;
@@ -54,36 +59,39 @@ void initDirection(long *distL, long *distR, int *directionLeft, int *directionR
     }
 }
 
-long calcTicks(long *ticks, long *distL, long *distR) {
-    *ticks = *distL * *distR;
-    if (*distL == 0) {
-        *ticks = *distR * *distR;
-        *distL = *distR;
-        *distR = 0;
-    } else if (*distR == 0) {
-        *ticks = *distL * *distL;
-        *distR = *distL;
-        *distL = 0;
+void setMotorSpeed(long distL, long distR, long directionLeft, long directionRight) {
+    int speed = motorMaxSpeed;
+    long speedL = speed;
+    long speedR = speed;
+    if (distL < distR){
+        speedL = (distL * speed / distR);
+        speedR = speed;
+    } else {
+        speedR = (distR * speed / distL);
+        speedL = speed;
     }
+    motorLeft.setSpeed(speedR);
+    motorRight.setSpeed(speedL);
 }
 
-void moveMotors(long ticks, long distL, long distR, long directionLeft, long directionRight) {
-    int countLeft = 0;
-    int countRight = 0;
-    for (long i = 0; i < ticks; i++) {
-        if (distL != 0 && i % distL == 0) {
-            countLeft = countLeft + (1 * directionRight);
-            motorLeft.step(STEPS_PER_TICK * directionRight);
-        }
-        if (distR != 0 && i % distR == 0) {
-            countRight = countRight + (1 * directionLeft);
-            motorRight.step(STEPS_PER_TICK * directionLeft);
-        }
+void moveMotors(long distL, long distR, long directionLeft, long directionRight) {
+    Serial.print(distL * STEPS_PER_MM * directionLeft);
+    Serial.print(" moveM ");
+    Serial.println(distR * STEPS_PER_MM * directionRight);
+    long positions[2]; // Array of desired stepper positions
+    positions[0] = round(distR * STEPS_PER_MM * directionRight);
+    positions[1] = round(distL * STEPS_PER_MM * directionLeft);
+    motorLeft.setCurrentPosition(0);
+    motorRight.setCurrentPosition(0);
+    plotter.moveTo(positions);
+    while ((motorLeft.distanceToGo() != 0) || (motorRight.distanceToGo() != 0)) {
+        plotter.run();
         yield();
     }
-    Serial.print(countRight * motorLeftDirection);
-    Serial.print(" count ");
-    Serial.println(countLeft * motorRightDirection);
+    delay(50);
+    Serial.print(motorLeft.currentPosition());
+    Serial.print(" currMpos ");
+    Serial.println(motorRight.currentPosition());   
 }
 
 void drawLine(long distanceLeft, long distanceRight){
@@ -94,22 +102,21 @@ void drawLine(long distanceLeft, long distanceRight){
     int directionRight = motorRightDirection;
     long distL = distanceLeft;
     long distR = distanceRight;
-    long ticks = 0;
-    initDirection(&distL, &distR, &directionLeft, &directionRight, distanceLeft, distanceRight);
-    calcTicks(&ticks, &distL, &distR);
-    moveMotors(ticks, distL, distR, directionLeft, directionRight);
+    setDirection(&distL, &distR, &directionLeft, &directionRight, distanceLeft, distanceRight);
+    setMotorSpeed(distL, distR, directionLeft, directionRight);
+    moveMotors(distL, distR, directionLeft, directionRight);
 }
 
 void getDistance(float x, float y, long *distanceLeft, long *distanceRight) {
-    float nextX = x + lastX;
-    float nextY = y + lastY;
+    float nextX = x * zoomFactor + lastX;
+    float nextY = y * zoomFactor + lastY;
     float leftX = origoX + nextX;
     float rightX = canvasWidth - leftX;
     float yPos  = nextY + origoY;
     long newLeft  = sqrt(pow(leftX, 2) + pow(yPos, 2));
     long newRight = sqrt(pow(rightX, 2) + pow(yPos, 2));
-    *distanceLeft  = (newLeft - currentLeft) * zoomFactor;
-    *distanceRight = (newRight - currentRight) * zoomFactor;
+    *distanceLeft  = (newLeft - currentLeft);
+    *distanceRight = (newRight - currentRight);
     currentLeft = newLeft;
     currentRight = newRight;
     lastX = nextX;
@@ -138,7 +145,7 @@ void moveToXY(long x, long y) {
 
 void plotDone() {
     servoPen.write(PEN_UP);
-    Serial.println("Plot done.");
+    Serial.println("Plotting done.");
     printing = false;
     goHome();
 }
