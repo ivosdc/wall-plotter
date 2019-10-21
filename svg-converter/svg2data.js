@@ -35,6 +35,8 @@ mEntries.forEach( line  => {
 });
 var wallPlotterJson = {lines: []};
 var lastPoint = {x: 0,y: 0};
+var zeroPoint = {x: 0,y: 0};
+
 lines.forEach( line => {
     var points = {points: []};
     line.split(' ').forEach( coord => {
@@ -50,6 +52,7 @@ lines.forEach( line => {
             points.points.push(point);
         }
     });
+    points.points.push(zeroPoint);
     wallPlotterJson.lines.push(points);
 })
 
@@ -57,7 +60,6 @@ lines.forEach( line => {
 var filteredPlotData = {lines: []};
 var plotDataString = "";
 var smallPoint = {x: 0,y: 0};
-var zeroPoint = {x: 0,y: 0};
 wallPlotterJson.lines.forEach(line => {
     var points = {points: []};
     line.points.forEach(point => {
@@ -84,7 +86,6 @@ wallPlotterJson.lines.forEach(line => {
            smallPoint.y = 0;
        }
     });
-    points.points.push(zeroPoint);
     filteredPlotData.lines.push(points);
 });
 wallPlotterJson = filteredPlotData;

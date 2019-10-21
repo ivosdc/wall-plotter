@@ -1,5 +1,4 @@
 # ESP-8266 wall-plotter
-Work in progress - no Version (still struggeling with &pi;)
 
 ![wall-plotter after work](assets/wall-plotter-cat.png "ESP-8266 wall-plotter")
 ![The SVG](svg-converter/svg/cat.svg "The SVG template")
