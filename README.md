@@ -1,4 +1,4 @@
-# ESP-8266 wall-plotter
+# Portable Pocket Plotter - ESP-8266 restfull wall plotter
 
 ![wall-plotter after work](assets/wall-plotter-cat.png "ESP-8266 wall-plotter")
 ![The SVG](svg-converter/svg/cat.svg "The SVG template")
