@@ -15,7 +15,7 @@ My needs were to use a `ESP 8266` board with its WiFi capabilities instead of a 
 ### Hardware:
 - 1 x NodeMCU 12e (ESP8266, I used a mini)
 - 2 x step motor 28BYJ-48
-- 1 x case (https://github.com/snebragd/stringent/blob/master/Hardware/)
+- 1 x case (https://github.com/snebragd/stringent/blob/master/Hardware)
 - 2 x spools (spool2.stl)
 - 1 x Servo SG90
 - min. 3 meters of fishing line. Depends on your wanted canvas size.
