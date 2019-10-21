@@ -60,8 +60,8 @@ void initServer() {
         delay(1000);
         Serial.print(".");
     }
-    Serial.println(WiFi.status() == 1 ? " failed" : " ok");
-    if (WiFi.status() == 1) {
+    Serial.println(WiFi.status() != WL_CONNECTED ? " failed" : " ok");
+    if (WiFi.status() != WL_CONNECTED) {
         initDNS();
         initAccessPoint();
     } else {
@@ -178,7 +178,7 @@ void serverRouting() {
     server.on("/stop", HTTP_POST, postPlotStop);
     server.on("/start", HTTP_POST, postPlotStart);
     server.on("/zoomfactor", HTTP_POST, postZoomFactor);
-    server.on("/wlan", HTTP_POST, postWlanSettings);
+    server.on("/wifi", HTTP_POST, postWlanSettings);
     server.on("/upload", HTTP_GET, getUpload);
     server.on("/config", HTTP_POST, postPlotterConfig);
 }

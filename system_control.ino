@@ -20,7 +20,6 @@ void initConfig() {
     configJson["plotter"]["currentRight"] = currentRight;
     configJson["plotter"]["zoomFactor"] = zoomFactor;
     serializeJson(configJson, configData);
-    Serial.println(configData);
     setOrigo();
 }
 
@@ -44,8 +43,8 @@ bool setConfig() {
 }
 
 void initMotors() {
-    motorLeft.setMaxSpeed(motorMaxSpeed);
-    motorRight.setMaxSpeed(motorMaxSpeed);
+    motorLeft.setMaxSpeed(MOTOR_MAX_SPEED);
+    motorRight.setMaxSpeed(MOTOR_MAX_SPEED);
     plotter.addStepper(motorLeft);
     plotter.addStepper(motorRight);
     servoPen.attach(SERVO_PIN);

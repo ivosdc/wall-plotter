@@ -7,15 +7,10 @@
 #include "Config.h"
 
 ESP8266WebServer server(80);
-
+Servo servoPen;
 AccelStepper motorLeft(AccelStepper::HALF4WIRE, MOTOR_LEFT_1, MOTOR_LEFT_3, MOTOR_LEFT_2, MOTOR_LEFT_4);
 AccelStepper motorRight(AccelStepper::HALF4WIRE, MOTOR_RIGHT_1, MOTOR_RIGHT_3, MOTOR_RIGHT_2, MOTOR_RIGHT_4);
 MultiStepper plotter;
-const int motorLeftDirection = 1;
-const int motorRightDirection = -1;
-const int motorMaxSpeed = 250;
-
-Servo servoPen;
 bool printing = true;
 
 StaticJsonDocument<1000> configJson;
@@ -48,19 +43,8 @@ void setup() {
     Serial.println("Ready!");
 }
 
-void setDirection(long *distL, long *distR, int *directionLeft, int *directionRight, long distanceLeft, long distanceRight){
-    if (distanceLeft < 0) {
-        *directionLeft = *directionLeft * -1;
-        *distL = *distL * -1;
-    }
-    if (distanceRight < 0) {
-        *directionRight = *directionRight * -1;
-        *distR = *distR * -1;
-    }
-}
-
 void setMotorSpeed(long distL, long distR, long directionLeft, long directionRight) {
-    int speed = motorMaxSpeed;
+    int speed = MOTOR_MAX_SPEED;
     long speedL = speed;
     long speedR = speed;
     if (distL < distR){
@@ -79,12 +63,13 @@ void setMotorSpeed(long distL, long distR, long directionLeft, long directionRig
 }
 
 void moveMotors(long distL, long distR, long directionLeft, long directionRight) {
-    Serial.print(distL * STEPS_PER_MM * directionLeft);
-    Serial.print(" moveM ");
-    Serial.println(distR * STEPS_PER_MM * directionRight);
+    Serial.print(distR * STEPS_PER_MM * directionRight);
+    Serial.print(" moveTo ");
+    Serial.println(distL * STEPS_PER_MM * directionLeft);
     long positions[2]; // Array of desired stepper positions
     positions[0] = round(distR * STEPS_PER_MM * directionRight);
     positions[1] = round(distL * STEPS_PER_MM * directionLeft);
+    setMotorSpeed(distL, distR, directionLeft, directionRight);
     motorLeft.setCurrentPosition(0);
     motorRight.setCurrentPosition(0);
     plotter.moveTo(positions);
@@ -94,7 +79,7 @@ void moveMotors(long distL, long distR, long directionLeft, long directionRight)
     }
     delay(50);
     Serial.print(motorLeft.currentPosition());
-    Serial.print(" currMpos ");
+    Serial.print(" currentPos ");
     Serial.println(motorRight.currentPosition());   
 }
 
@@ -102,12 +87,18 @@ void drawLine(long distanceLeft, long distanceRight){
     Serial.print(distanceLeft);
     Serial.print(" dist ");
     Serial.println(distanceRight);
-    int directionLeft = motorLeftDirection;
-    int directionRight = motorRightDirection;
+    int directionLeft = MOTOR_LEFT_DIRECTION;
+    int directionRight = MOTOR_RIGHT_DIRECTION;
     long distL = distanceLeft;
     long distR = distanceRight;
-    setDirection(&distL, &distR, &directionLeft, &directionRight, distanceLeft, distanceRight);
-    setMotorSpeed(distL, distR, directionLeft, directionRight);
+    if (distanceLeft < 0) {
+        directionLeft = directionLeft * -1;
+        distL = distL * -1;
+    }
+    if (distanceRight < 0) {
+        directionRight = directionRight * -1;
+        distR = distR * -1;
+    }
     moveMotors(distL, distR, directionLeft, directionRight);
 }
 

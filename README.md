@@ -33,7 +33,7 @@ My needs were to use a `ESP 8266` board with its WiFi capabilities instead of a 
 ## What happens until now:
 
 ### Spawns own WiFi when no WiFi is reachable. 
- - you can enter your own WiFi parameter. Just POST a json ``` {"ssid":"MY-SSID","password":"PASSWORD"} ``` to the server.
+ - you can enter your own WiFi parameter. Just POST a json  to the server.
  - Default IP from own **Accespoint 192.168.0.1**
  - Your uploaded WiFI credentials are stored in a persistant config.json
 
@@ -49,18 +49,21 @@ This will create a `wall-plotter.data` file for upload.
 
 
 ### Upload plots with WiFi 
- - Upload `wall-plotter.data` to ESP8266 `/upload`. A webform for file upload is presented.
-
+ - GET `/upload`: Upload a `wall-plotter.data` to ESP8266. A webform for file upload is presented.
+ - GET `/plot`: Shows the last stored *wall-plotter.data*
+ - POST `/plot`: Handles the file upload *wall-plotter.data*
+ 
 ### Set configuration parameter
-- Change the output size. POST ``` {"zoomFactor":"1"} ``` to `/zoom`. 1 (no zoom) is default. 
-- Set canvas width and the position of the wall-plotter. POST ```{"canvasWidth":"1000","currentLeft":"330","currentRight":"999","zoomFactor":"1"}``` to `/config`.
+- POST `/config`: Set canvas width and the position of the wall-plotter. ```{"canvasWidth":"1000","currentLeft":"330","currentRight":"999","zoomFactor":"1"}``` to `/config`.
+- POST `/wifi`: Set your WiFi parameter. ``` {"ssid":"MY-SSID","password":"PASSWORD"} ```
+- POST `/zoom`: Only change the output size. ``` {"zoomFactor":"1"} ```. 1 (no zoom) is default. 
 
 ### Start / Stop the wall-plotter on demand
-- POST `/plot/start`: This starts plotting your uploaded *wall-plotter.data*
-- POST `/plot/stop`: This will interrupt the running plot, if there is any.
-- GET `/plot`: Shows the last stored *wall-plotter.data*
+- POST `/start`: This starts plotting your uploaded *wall-plotter.data*
+- POST `/stop`: This will interrupt the running plot, if there is any.
 
-[See all API-endpoints in wall-plotter::serverRouting()](https://github.com/ivosdc/wall-plotter/blob/6ce040f6c54414caa6de0233a5dc669bce96f97b/wall-plotter.ino#L422)
+
+[See all API-endpoints in wall-plotter::serverRouting()](https://github.com/ivosdc/wall-plotter/blob/ec4a6ae48933ddb8831ab3e29a7f0a8e4150781f/server_control.ino#L174)
 
 
 
