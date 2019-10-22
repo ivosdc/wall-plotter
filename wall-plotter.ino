@@ -67,8 +67,8 @@ void moveMotors(long distL, long distR, long directionLeft, long directionRight)
     Serial.print(" moveTo ");
     Serial.println(distL * STEPS_PER_MM * directionLeft);
     long positions[2]; // Array of desired stepper positions
-    positions[0] = round(distR * STEPS_PER_MM * directionRight);
-    positions[1] = round(distL * STEPS_PER_MM * directionLeft);
+    positions[0] = distR * STEPS_PER_MM * directionRight;
+    positions[1] = distL * STEPS_PER_MM * directionLeft;
     setMotorSpeed(distL, distR, directionLeft, directionRight);
     motorLeft.setCurrentPosition(0);
     motorRight.setCurrentPosition(0);

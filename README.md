@@ -1,4 +1,4 @@
-# Portable Pocket Plotter - ESP-8266 restfull wall plotter
+# Portable Pocket Plotter - ESP-8266 restful wall plotter
 
 ![wall-plotter after work](assets/wall-plotter-cat.png "ESP-8266 wall-plotter")
 ![The SVG](svg-converter/svg/cat.svg "The SVG template")
@@ -28,6 +28,12 @@ My needs were to use a `ESP 8266` board with its WiFi capabilities instead of a 
 - Arduino IDE
 - gimp
 - node.js
+
+#### Libraries
+- ArduinoJson
+- AccelStepper
+
+These are standard libs from Arduino and have just to be added and installed. 
 
 ## What happens until now:
 
