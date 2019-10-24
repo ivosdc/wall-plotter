@@ -54,24 +54,13 @@ lines.forEach( line => {
         if (!isNaN(point.x) && !isNaN(point.y))  {
             point.x = parseFloat(xy[0]);
             point.y = parseFloat(xy[1]);
-            /*            if (points.points.length === 1) {
-                            console.log("FIRSTPOINT")
-                            console.log("X:" + xy[0]);
-                            console.log("Y:" + xy[1]);
-                            firstPoint.x = parseFloat(xy[0]) - parseFloat(firstPoint.x);
-                            firstPoint.y = parseFloat(xy[1]) - parseFloat(firstPoint.y);
-                            console.log(firstPoint);
-                        }
-                        lastPoint.x = parseFloat(xy[0]);
-                        lastPoint.y = parseFloat(xy[1]);
-            */            points.points.push(point);
+            points.points.push(point);
         }
     });
-//    points.points.push(zeroPoint);
     wallPlotterJson.lines.push(points);
 })
 
-// bezier
+// replace bezier
 var newWallPlotterJson = {lines: []};
 
 var getBezierPoints = function(start, mid, end) {
@@ -86,7 +75,6 @@ wallPlotterJson.lines.forEach(line => {
     var points = {points: []};
     line.points.forEach(point => {
         if (counter > 0) {
-//            console.log(bezierCoords);
             bezierCoords[counter - 1].x = point.x;
             bezierCoords[counter - 1].y = point.y;
         } else {
@@ -103,10 +91,7 @@ wallPlotterJson.lines.forEach(line => {
                 points.points.push(bPoint);
             })
         }
-        /*        if (counter > 3) {
-                    points.points.push(point);
-                }
-        */    });
+    });
     newWallPlotterJson.lines.push(points);
 });
 wallPlotterJson = newWallPlotterJson;
@@ -123,14 +108,7 @@ wallPlotterJson.lines.forEach( line => {
         if (!isNaN(point.x) && !isNaN(point.y)) {
             var x = (point.x - parseFloat(lastPoint.x)) * parseFloat(zoom);
             var y = (point.y - parseFloat(lastPoint.y)) * parseFloat(zoom);
-            /*            if (points.points.length === 1) {
-                            console.log("FIRSTPOINT")
-                            console.log(firstPoint);
-                            firstPoint.x = parseFloat(xy[0]) - parseFloat(firstPoint.x);
-                            firstPoint.y = parseFloat(xy[1]) - parseFloat(firstPoint.y);
-                            console.log(firstPoint);
-                        }
-            */            lastPoint.x = point.x;
+            lastPoint.x = point.x;
             lastPoint.y = point.y;
             point.x = x;
             point.y = y;
