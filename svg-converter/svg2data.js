@@ -1,6 +1,6 @@
 var parser = require('xml2json');
 var fs = require('fs');
-var Bezier = require('bezier-js');
+const { pathDataToPolys } = require('./svg-path-to-polygon.js');
 
 var myArgs = process.argv.slice(2);
 var xml = fs.readFileSync(myArgs[0], 'utf8');
@@ -21,131 +21,38 @@ if (pathGroup != undefined) {
     pathInfo = svg.svg.path.d;
 }
 
-if (pathInfo.includes('V') || pathInfo.includes('v') ||
-    pathInfo.includes('L') || pathInfo.includes('l') ||
-    pathInfo.includes('H') || pathInfo.includes('h') ||
-    pathInfo.includes('m') || pathInfo.includes('c')) {
-    console.log(pathInfo);
-    console.log("Not supported SVG-path directive.");
-    return;
-}
+let path2polyPoints = pathDataToPolys(pathInfo, {tolerance:1, decimals:1});
+//console.log(path2polyPoints);
 
-var mEntries = pathInfo.split("M");
+//relative
 var lines = [];
-mEntries.forEach( line  => {
-    if (line.trim() != '') {
-        lines.push(line.trim().replace('C', '')
-            .replace('Z', '')
-            .replace(/\s\s+/g, ' '));
-    }
-});
-var wallPlotterJson = {lines: []};
-var zeroPoint = {x: 0,y: 0};
-var firstPoint = {x:0,y:0};
-
-lines.forEach( line => {
-    var points = {points: []};
-    console.log(line);
-    line.split(' ').forEach( coord => {
-        var xy = coord.split(',');
-        var point = {x: parseFloat(xy[0]),
-            y: parseFloat(xy[1])};
-
-        if (!isNaN(point.x) && !isNaN(point.y))  {
-            point.x = parseFloat(xy[0]);
-            point.y = parseFloat(xy[1]);
-            points.points.push(point);
-        }
-    });
-    wallPlotterJson.lines.push(points);
-})
-
-// replace bezier
-var newWallPlotterJson = {lines: []};
-
-var getBezierPoints = function(start, mid, end) {
-    var curve = new Bezier(start, mid, end);
-    return curve.getLUT(5);
-};
-
-var bezierCoords = [{x:0, y:0},{x:0, y:0},{x:0, y:0}];
-
-wallPlotterJson.lines.forEach(line => {
-    var counter = 0;
-    var points = {points: []};
-    line.points.forEach(point => {
-        if (counter > 0) {
-            bezierCoords[counter - 1].x = point.x;
-            bezierCoords[counter - 1].y = point.y;
-        } else {
-            points.points.push(point);
-            console.log("M:");
-            console.log(point);
-        }
-        counter++;
-        if (counter == 4) {
-            counter = 0;
-            var bezierPoints = getBezierPoints(bezierCoords[0], bezierCoords[1], bezierCoords[2]);
-            console.log(bezierPoints);
-            bezierPoints.forEach( bPoint => {
-                points.points.push(bPoint);
-            })
-        }
-    });
-    newWallPlotterJson.lines.push(points);
-});
-wallPlotterJson = newWallPlotterJson;
-
-//relative path
-var newWallPlotterJson = {lines: []};
+var point = {x: 0,y: 0};
 var lastPoint = {x: 0,y: 0};
-var zeroPoint = {x: 0,y: 0};
-var firstPoint = {x:0,y:0};
-
-wallPlotterJson.lines.forEach( line => {
-    var points = {points: []};
-    line.points.forEach(point => {
-        if (!isNaN(point.x) && !isNaN(point.y)) {
-            var x = (point.x - parseFloat(lastPoint.x)) * parseFloat(zoom);
-            var y = (point.y - parseFloat(lastPoint.y)) * parseFloat(zoom);
-            lastPoint.x = point.x;
-            lastPoint.y = point.y;
-            point.x = x;
-            point.y = y;
-            points.points.push(point);
-        }
+path2polyPoints.forEach( line  => {
+    var points = [];
+    line.forEach(point => {
+        point.x = parseFloat(point[0]) - lastPoint.x;
+        point.y = parseFloat(point[1]) - lastPoint.y;
+        lastPoint.x = parseFloat(point[0]);
+        lastPoint.y = parseFloat(point[1]);
+        points.push(point);
     });
-    points.points.push(zeroPoint);
-    newWallPlotterJson.lines.push(points);
+    lines.push(points);
 });
+//console.log(lines);
 
-// data
-var data = "";
-wallPlotterJson.lines.forEach(line => {
-    data += "m\n";
-    line.points.forEach(point => {
-        data += point.x + "," + point.y + "\n";
+var newPath = "";
+lines.forEach( line => {
+    newPath += "m\n";
+    line.forEach(point => {
+        newPath += point.x + "," + point.y + "\n";
     });
+})
+fs.writeFile('wall-plotter.data', newPath, 'utf8', f => {
+//    console.log(newPath);
 });
 
-fs.writeFile('wall-plotter.data', data, 'utf8', f => {
-//    console.log(data);
-});
-
-// back to svg
-var path = "";
-wallPlotterJson.lines.forEach(line => {
-    path += "\nm ";
-    line.points.forEach(point => {
-        path += point.x + "," + point.y + " ";
-    });
-});
-
-if (pathGroup != undefined) {
-    svg.svg.path = {};
-    svg.svg.g = undefined;
-}
-svg.svg.path.d = path;
+svg.svg.path.d = newPath;
 xml = parser.toXml(svg);
 
 fs.writeFile('wall-plotter.svg', xml, 'utf8', f => {
