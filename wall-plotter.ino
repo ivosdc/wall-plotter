@@ -62,7 +62,7 @@ void setMotorSpeed(long distL, long distR, long directionLeft, long directionRig
     motorRight.setSpeed(speedL);
 }
 
-void moveMotors(long distL, long distR, long directionLeft, long directionRight) {
+void moveMotors(float distL, float distR, int directionLeft, int directionRight) {
     Serial.print(distR * STEPS_PER_MM * directionRight);
     Serial.print(" moveTo ");
     Serial.println(distL * STEPS_PER_MM * directionLeft);
@@ -83,14 +83,14 @@ void moveMotors(long distL, long distR, long directionLeft, long directionRight)
     Serial.println(motorRight.currentPosition());   
 }
 
-void drawLine(long distanceLeft, long distanceRight){
+void drawLine(float distanceLeft, float distanceRight){
     Serial.print(distanceLeft);
     Serial.print(" dist ");
     Serial.println(distanceRight);
     int directionLeft = MOTOR_LEFT_DIRECTION;
     int directionRight = MOTOR_RIGHT_DIRECTION;
-    long distL = distanceLeft;
-    long distR = distanceRight;
+    float distL = distanceLeft;
+    float distR = distanceRight;
     if (distanceLeft < 0) {
         directionLeft = directionLeft * -1;
         distL = distL * -1;
@@ -102,14 +102,14 @@ void drawLine(long distanceLeft, long distanceRight){
     moveMotors(distL, distR, directionLeft, directionRight);
 }
 
-void getDistance(float x, float y, long *distanceLeft, long *distanceRight) {
+void getDistance(float x, float y, float *distanceLeft, float *distanceRight) {
     float nextX = x * zoomFactor + lastX;
     float nextY = y * zoomFactor + lastY;
     float leftX = origoX + nextX;
     float rightX = canvasWidth - leftX;
     float yPos  = nextY + origoY;
-    long newLeft  = sqrt(pow(leftX, 2) + pow(yPos, 2));
-    long newRight = sqrt(pow(rightX, 2) + pow(yPos, 2));
+    float newLeft  = sqrt(pow(leftX, 2) + pow(yPos, 2));
+    float newRight = sqrt(pow(rightX, 2) + pow(yPos, 2));
     *distanceLeft  = (newLeft - currentLeft);
     *distanceRight = (newRight - currentRight);
     currentLeft = newLeft;
@@ -119,8 +119,8 @@ void getDistance(float x, float y, long *distanceLeft, long *distanceRight) {
 }
 
 void goHome() {
-    long distanceLeft = 0;
-    long distanceRight = 0;
+    float distanceLeft = 0;
+    float distanceRight = 0;
     homeX = homeX * -1;
     homeY = homeY * -1;
     getDistance(homeX,homeY, &distanceLeft, &distanceRight);
@@ -130,8 +130,8 @@ void goHome() {
 }
 
 void moveToXY(long x, long y) {
-    long distanceLeft = 0;
-    long distanceRight = 0;
+    float distanceLeft = 0;
+    float distanceRight = 0;
     homeX = homeX + x;
     homeY = homeY + y;
     getDistance(x,y, &distanceLeft, &distanceRight);

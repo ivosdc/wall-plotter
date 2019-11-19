@@ -4,12 +4,15 @@ module.exports = {
 };
 const { parseSVG, makeAbsolute } = require('svg-path-parser');
 
+var Bezier = require('bezier-js')
+
 function svgPathToPolygon(svgPathString, opts={}) {
     if (!opts.tolerance) opts.tolerance=1;
     const polys = [];
     const tolerance2 = opts.tolerance*opts.tolerance;
     let poly = [];
     let prev;
+
     makeAbsolute(parseSVG(svgPathString)).forEach( cmd => {
         switch(cmd.code) {
             case 'M':
@@ -24,8 +27,14 @@ function svgPathToPolygon(svgPathString, opts={}) {
                 break;
 
             case 'C':
-                sampleCubicBézier(cmd.x0,cmd.y0,cmd.x1,cmd.y1,cmd.x2,cmd.y2,cmd.x,cmd.y);
-                add(cmd.x,cmd.y);
+                var newBezier = new Bezier(cmd.x0,cmd.y0,cmd.x1,cmd.y1,cmd.x2,cmd.y2,cmd.x,cmd.y);
+
+                newBezier.getLUT(5).forEach( point => {
+                    add(point.x,point.y);
+                })
+
+//                sampleCubicBézier(cmd.x0,cmd.y0,cmd.x1,cmd.y1,cmd.x2,cmd.y2,cmd.x,cmd.y);
+//                add(cmd.x,cmd.y);
                 break;
 
             case 'S':
@@ -83,8 +92,8 @@ function svgPathToPolygon(svgPathString, opts={}) {
 
     function add(x,y){
         if (opts.decimals && opts.decimals>=0) {
-            x = x.toFixed(opts.decimals)*1;
-            y = y.toFixed(opts.decimals)*1;
+            x = x.toFixed(opts.decimals);
+            y = y.toFixed(opts.decimals);
         }
         poly.push([x,y]);
     }
