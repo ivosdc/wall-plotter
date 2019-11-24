@@ -17,8 +17,8 @@ StaticJsonDocument<1000> configJson;
 const char* ssid  = "SSID";
 const char* password = "PASSWORD";
 long canvasWidth = 1000;
-long currentLeft = canvasWidth;
-long currentRight = canvasWidth;
+float currentLeft = canvasWidth;
+float currentRight = canvasWidth;
 float zoomFactor = 1.0;
 
 static float origoX = canvasWidth / 2;
@@ -58,8 +58,11 @@ void setMotorSpeed(long distL, long distR, long directionLeft, long directionRig
             speedR = (distR * speed / distL);
         }
     }
-    motorLeft.setSpeed(speedR);
-    motorRight.setSpeed(speedL);
+    motorLeft.setSpeed(speedR * directionRight);
+    motorRight.setSpeed(speedL * directionLeft);
+    Serial.print(speedR  * directionRight);
+    Serial.print(" speed ");
+    Serial.println(speedL  * directionLeft);
 }
 
 void moveMotors(float distL, float distR, int directionLeft, int directionRight) {
@@ -83,23 +86,21 @@ void moveMotors(float distL, float distR, int directionLeft, int directionRight)
     Serial.println(motorRight.currentPosition());   
 }
 
-void drawLine(float distanceLeft, float distanceRight){
-    Serial.print(distanceLeft);
+void drawLine(float x, float y){
+    Serial.print(x);
     Serial.print(" dist ");
-    Serial.println(distanceRight);
-    int directionLeft = MOTOR_LEFT_DIRECTION;
-    int directionRight = MOTOR_RIGHT_DIRECTION;
-    float distL = distanceLeft;
-    float distR = distanceRight;
-    if (distanceLeft < 0) {
-        directionLeft = directionLeft * -1;
-        distL = distL * -1;
+    Serial.println(y);
+    int directionX = MOTOR_LEFT_DIRECTION;
+    int directionY = MOTOR_RIGHT_DIRECTION;
+    if (x < 0) {
+        x = x * -1;
+        directionX = directionX * -1;
     }
-    if (distanceRight < 0) {
-        directionRight = directionRight * -1;
-        distR = distR * -1;
+    if (y < 0) {
+        y = y * -1;
+        directionY = directionY * -1;
     }
-    moveMotors(distL, distR, directionLeft, directionRight);
+    moveMotors(x, y, directionX, directionY);
 }
 
 void getDistance(float x, float y, float *distanceLeft, float *distanceRight) {
